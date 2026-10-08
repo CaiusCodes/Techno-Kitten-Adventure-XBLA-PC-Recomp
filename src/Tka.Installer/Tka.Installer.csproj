@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <AssemblyName>Setup Techno Kitten Adventure</AssemblyName>
+    <ApplicationIcon>Assets/techno-kitty.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="../../out/installer-launcher-build/Release/Techno Kitten Adventure.exe" LogicalName="Tka.PlayLauncher" />
+    <ProjectReference Include="../../tools/Tka.AssemblyTool/Tka.AssemblyTool.csproj" />
+    <ProjectReference Include="../../tools/Tka.AssetTool/Tka.AssetTool.csproj" />
+  </ItemGroup>
+</Project>

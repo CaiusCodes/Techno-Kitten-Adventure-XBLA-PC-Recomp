@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>Techno Kitten Adventure</AssemblyName>
+    <ApplicationIcon>Assets/game-kitty.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup><ProjectReference Include="../Tka.Compatibility/Tka.Compatibility.csproj" /></ItemGroup>
+</Project>

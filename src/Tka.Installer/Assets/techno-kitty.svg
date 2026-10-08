@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <path d="M16 126 C16 64 66 14 128 14 C190 14 240 64 240 126" fill="none" stroke="#ff3fa2" stroke-width="8"/>
+  <path d="M25 126 C25 69 71 23 128 23 C185 23 231 69 231 126" fill="none" stroke="#ffae41" stroke-width="7"/>
+  <path d="M34 126 C34 74 76 32 128 32 C180 32 222 74 222 126" fill="none" stroke="#fbf26c" stroke-width="7"/>
+  <path d="M43 126 C43 79 81 41 128 41 C175 41 213 79 213 126" fill="none" stroke="#68e697" stroke-width="7"/>
+  <path d="M52 126 C52 84 86 50 128 50 C170 50 204 84 204 126" fill="none" stroke="#56eaf3" stroke-width="7"/>
+  <path d="M61 126 C61 89 91 59 128 59 C165 59 195 89 195 126" fill="none" stroke="#aa7bff" stroke-width="7"/>
+  <path d="M56 115 L47 47 C45 33 52 31 64 39 L99 73 C117 67 139 67 157 73 L192 39 C204 31 211 33 209 47 L200 115 C214 134 216 157 209 178 C200 205 172 224 128 227 C84 224 56 205 47 178 C40 157 42 134 56 115 Z" fill="#211334" stroke="#211334" stroke-width="12"/>
+  <path d="M61 115 L54 46 L99 84 C119 76 137 76 157 84 L202 46 L195 115 C210 133 210 156 203 176 C194 199 168 216 128 219 C88 216 62 199 53 176 C46 156 46 133 61 115 Z" fill="#ffffff"/>
+  <path d="M65 95 L61 60 L89 85 Z" fill="#ff3fa2"/>
+  <path d="M191 95 L195 60 L167 85 Z" fill="#56eaf3"/>
+  <path d="M59 145 C63 125 83 111 106 119 C119 124 120 146 109 158 C96 174 71 171 61 155 Z" fill="#211334"/>
+  <path d="M197 145 C193 125 173 111 150 119 C137 124 136 146 147 158 C160 174 185 171 195 155 Z" fill="#211334"/>
+  <path d="M73 143 C76 132 88 125 100 130 C109 134 109 145 102 152 C93 161 79 157 73 150 Z" fill="#56eaf3"/>
+  <path d="M183 143 C180 132 168 125 156 130 C147 134 147 145 154 152 C163 161 177 157 183 150 Z" fill="#56eaf3"/>
+  <path d="M91 131 L96 131 L96 153 L91 153 Z" fill="#211334"/>
+  <path d="M160 131 L165 131 L165 153 L160 153 Z" fill="#211334"/>
+  <path d="M119 165 L137 165 L128 174 Z" fill="#ff3fa2"/>
+  <path d="M128 176 L128 183 C120 195 110 190 106 185 M128 183 C136 195 146 190 150 185" fill="none" stroke="#211334" stroke-width="6"/>
+  <path d="M70 174 L45 168 M71 187 L45 190 M186 174 L211 168 M185 187 L211 190" fill="none" stroke="#ff3fa2" stroke-width="7"/>
+  <path d="M228 185 L233 199 L247 204 L233 209 L228 223 L223 209 L209 204 L223 199 Z" fill="#56eaf3" stroke="#211334" stroke-width="4"/>
+</svg>

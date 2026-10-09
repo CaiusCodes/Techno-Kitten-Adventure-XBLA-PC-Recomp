@@ -17,27 +17,51 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 public static class TkaIconRenderer {
     static float N(string s) => float.Parse(s, CultureInfo.InvariantCulture);
+    static void Draw(XmlElement node, Graphics g) {
+        if (node.LocalName == "g") {
+            var state = g.Save();
+            foreach (Match transform in Regex.Matches(node.GetAttribute("transform"), @"(translate|scale)\(([^)]+)\)")) {
+                var values = Regex.Split(transform.Groups[2].Value.Trim(), @"[,\s]+").Select(N).ToArray();
+                if (values.Length < 1 || values.Length > 2) throw new InvalidDataException("Invalid icon transform.");
+                if (transform.Groups[1].Value == "translate") g.TranslateTransform(values[0], values.Length == 2 ? values[1] : 0);
+                else g.ScaleTransform(values[0], values.Length == 2 ? values[1] : values[0]);
+            }
+            foreach (XmlNode child in node.ChildNodes) if (child is XmlElement element) Draw(element, g);
+            g.Restore(state); return;
+        }
+        if (node.LocalName != "path") throw new InvalidDataException("Unsupported original SVG element.");
+        var t = Regex.Matches(node.GetAttribute("d"), @"[MLCZ]|-?\d+(?:\.\d+)?").Select(m => m.Value).ToArray();
+        using var p = new GraphicsPath(); float x=0,y=0; int i=0;
+        while(i<t.Length) {
+            var command=t[i++];
+            if(command=="M") { x=N(t[i++]); y=N(t[i++]); p.StartFigure(); }
+            else if(command=="L") { float nx=N(t[i++]),ny=N(t[i++]); p.AddLine(x,y,nx,ny); x=nx;y=ny; }
+            else if(command=="C") { float a=N(t[i++]),b=N(t[i++]),c=N(t[i++]),d=N(t[i++]),nx=N(t[i++]),ny=N(t[i++]); p.AddBezier(x,y,a,b,c,d,nx,ny);x=nx;y=ny; }
+            else if(command=="Z") p.CloseFigure();
+            else throw new InvalidDataException("Unsupported original SVG command.");
+        }
+        var fill=node.GetAttribute("fill");
+        if(fill!="none") { using var brush=new SolidBrush(ColorTranslator.FromHtml(fill)); g.FillPath(brush,p); }
+        if(node.HasAttribute("stroke")) { using var pen=new Pen(ColorTranslator.FromHtml(node.GetAttribute("stroke")),N(node.GetAttribute("stroke-width"))) { LineJoin=LineJoin.Round, StartCap=LineCap.Round,EndCap=LineCap.Round }; g.DrawPath(pen,p); }
+    }
     public static byte[] Render(string svg, int size) {
         var doc = new XmlDocument(); doc.Load(svg);
+        var pixelArt = int.TryParse(doc.DocumentElement.GetAttribute("data-pixel-grid"), out int grid);
+        if (pixelArt && (grid < 16 || grid > 256)) throw new InvalidDataException("Invalid pixel-art grid.");
+        int canvas = pixelArt ? grid : size;
+        using var original = new Bitmap(canvas, canvas, PixelFormat.Format32bppArgb);
+        using (var drawing = Graphics.FromImage(original)) {
+            drawing.Clear(Color.Transparent);
+            drawing.SmoothingMode = pixelArt ? SmoothingMode.None : SmoothingMode.AntiAlias;
+            if (!pixelArt) drawing.ScaleTransform(size / 256f, size / 256f);
+            foreach (XmlNode child in doc.DocumentElement.ChildNodes) if (child is XmlElement element) Draw(element, drawing);
+        }
         using var bitmap = new Bitmap(size, size, PixelFormat.Format32bppArgb);
         using var g = Graphics.FromImage(bitmap);
-        g.Clear(Color.Transparent); g.SmoothingMode = SmoothingMode.AntiAlias;
-        g.ScaleTransform(size / 256f, size / 256f);
-        foreach (XmlElement node in doc.DocumentElement.ChildNodes) {
-            var t = Regex.Matches(node.GetAttribute("d"), @"[MLCZ]|-?\d+(?:\.\d+)?").Select(m => m.Value).ToArray();
-            using var p = new GraphicsPath(); float x=0,y=0; int i=0;
-            while(i<t.Length) {
-                var command=t[i++];
-                if(command=="M") { x=N(t[i++]); y=N(t[i++]); p.StartFigure(); }
-                else if(command=="L") { float nx=N(t[i++]),ny=N(t[i++]); p.AddLine(x,y,nx,ny); x=nx;y=ny; }
-                else if(command=="C") { float a=N(t[i++]),b=N(t[i++]),c=N(t[i++]),d=N(t[i++]),nx=N(t[i++]),ny=N(t[i++]); p.AddBezier(x,y,a,b,c,d,nx,ny);x=nx;y=ny; }
-                else if(command=="Z") p.CloseFigure();
-                else throw new InvalidDataException("Unsupported original SVG command.");
-            }
-            var fill=node.GetAttribute("fill");
-            if(fill!="none") { using var brush=new SolidBrush(ColorTranslator.FromHtml(fill)); g.FillPath(brush,p); }
-            if(node.HasAttribute("stroke")) { using var pen=new Pen(ColorTranslator.FromHtml(node.GetAttribute("stroke")),N(node.GetAttribute("stroke-width"))) { LineJoin=LineJoin.Round, StartCap=LineCap.Round,EndCap=LineCap.Round }; g.DrawPath(pen,p); }
-        }
+        g.Clear(Color.Transparent);
+        g.InterpolationMode = InterpolationMode.NearestNeighbor;
+        g.PixelOffsetMode = PixelOffsetMode.Half;
+        g.DrawImage(original, new Rectangle(0, 0, size, size), 0, 0, canvas, canvas, GraphicsUnit.Pixel);
         using var stream=new MemoryStream(); bitmap.Save(stream,ImageFormat.Png);return stream.ToArray();
     }
 }

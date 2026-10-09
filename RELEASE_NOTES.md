@@ -1,3 +1,21 @@
+# V0.9 — 0.9.0
+
+The current build is numbered V0.9 (package and Windows product version 0.9.0). This renumbers the current port without rolling back fixes. The title-only version label now uses original cream pixel lettering with a navy outline and a small cyan/pink underline, displaying `v0.9` without the previous box.
+
+Stage/kitten Select and Back controller prompts and the flight A-button instructions now follow gamepad connection status, including connection changes during play. Mouse, keyboard and controller bindings are unchanged.
+
+# Development build — formerly V1.1.0
+
+The asset-free ZIP now opens to one `Techno Kitten Adventure XBLA Recomp` folder containing Setup, README.txt and licences. Setup carries the Windows runtime and creates `Game/Techno Kitten Adventure.exe`, `Game/resources/`, `Game/release-manifest.json` and the converted files from your own supported package.
+
+- Added mouse hover selection, a visible menu cursor, left-click Start on the opening screen, left-click A and right-click B in menus, Enter Start in menus, Esc Back in menus and Esc Pause during play. WASD supplements the existing arrow keys. The cursor hides during active play.
+- Setup's Choose file picker starts beside the Setup EXE. Opshunz ON/OFF values and display/resolution controls are clickable, and visible level-select arrows scroll their respective direction without selecting a pack.
+- Added an optional Setup extra to unlock score-gated kittens in the portable save. All five stages were already available in full mode. Reinstallation retains the previous save in a backup.
+- Added the selected Silver Explorer pixel-art kitten to game and Setup icons. Setup uses a sunset side panel, cream/pink pixel lettering, a cyan divider and arcade-style buttons.
+- Preserved the original game program, menu callbacks, controller controls and transactional package import.
+
+Only the exact audited Xbox 360 package is supported. Additional physical input and hardware testing is still welcome. No game assets are included in the download.
+
 # V1.0.3
 
 First planned public release of the free, asset-free .NET 8 / MonoGame PC port of the Techno Kitten Adventure! XBLA game. Supply the exact supported Xbox 360 package yourself; Setup reads it locally and prepares the game in a portable `Game` folder.

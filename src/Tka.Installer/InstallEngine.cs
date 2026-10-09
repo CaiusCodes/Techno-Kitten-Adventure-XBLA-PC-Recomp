@@ -3,16 +3,13 @@ using System.Text.Json;
 
 namespace Tka.Installer;
 
-internal sealed class InstallEngine(string distributionRoot, Action<int, string> progress, Action<string> log, Action? beforePromotion = null, Action? beforeLauncherPromotion = null)
+internal sealed class InstallEngine(Action<int, string> progress, Action<string> log, Action? beforePromotion = null, Action? beforeLauncherPromotion = null)
 {
-    public string Install(string package, string destination, CancellationToken cancel)
+    public string Install(string package, string destination, CancellationToken cancel, bool unlockAll = false)
     {
         var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(destination));
         Directory.CreateDirectory(root);
         if ((File.GetAttributes(root) & FileAttributes.ReparsePoint) != 0) throw new IOException("Choose a regular writable folder for installation.");
-        var resources = Path.Combine(distributionRoot, "resources");
-        var payload = Path.Combine(resources, "game");
-        if (!File.Exists(Path.Combine(payload, "Techno Kitten Adventure.exe"))) throw new FileNotFoundException("Installer resources are missing. Extract the complete download first.");
         var game = Path.Combine(root, "Game");
         var legacy = Path.Combine(root, "runtime");
         var launcher = Path.Combine(root, "Techno Kitten Adventure.exe");
@@ -37,18 +34,18 @@ internal sealed class InstallEngine(string distributionRoot, Action<int, string>
         var effects = Path.Combine(staging, "effects");
         var textures = Path.Combine(staging, "textures");
         var ready = Path.Combine(staging, "Game");
-        var readyLauncher = Path.Combine(staging, "Techno Kitten Adventure.exe");
         string? backup = null;
         var promoted = false;
         try
         {
-            File.WriteAllBytes(readyLauncher, launcherBytes);
             progress(2, "Checking your package…");
             StfsPackage.Extract(package, extracted, cancel, progress);
             cancel.ThrowIfCancellationRequested();
             progress(32, "Preparing the Windows game…");
-            CopyTree(payload, ready, cancel);
-            GamePayload.RestoreShared(resources, ready, cancel);
+            InstallerPayload.Extract(ready, cancel);
+            var resources = Path.Combine(ready, "resources");
+            if (!File.ReadAllBytes(Path.Combine(ready, "Techno Kitten Adventure.exe")).AsSpan().SequenceEqual(launcherBytes))
+                throw new InvalidDataException("Embedded play launcher does not match Setup.");
             if (AssemblyRetargeter.Run([Path.Combine(extracted, "584E07D1/Helicopter.exe"), Path.Combine(ready, "Helicopter.dll")]) != 0)
                 throw new InvalidDataException("The game program could not be converted.");
             var content = Path.Combine(extracted, "584E07D1/Content");
@@ -74,6 +71,7 @@ internal sealed class InstallEngine(string distributionRoot, Action<int, string>
             // Saves/settings are copied into the completed staging tree before
             // either rename. Existing installation remains usable until commit.
             if (Directory.Exists(Path.Combine(previous, "userdata"))) CopyTree(Path.Combine(previous, "userdata"), Path.Combine(ready, "userdata"), cancel);
+            if (unlockAll) InstallerExtras.UnlockAll(ready);
             var reports = Path.Combine(ready, "userdata/cache/import"); Directory.CreateDirectory(reports);
             foreach (var report in new[] { Path.Combine(extracted, "extraction-manifest.json"), Path.Combine(effects, "conversion-report.json"),
                 Path.Combine(shaders, "shader-manifest.json"), Path.Combine(textures, "texture-report.json") }) File.Copy(report, Path.Combine(reports, Path.GetFileName(report)), true);
@@ -91,39 +89,34 @@ internal sealed class InstallEngine(string distributionRoot, Action<int, string>
                 log("Previous installation retained: " + backup);
             }
             var runtimePromoted = false;
-            string? oldLauncherBackup = null;
+            var launcherBackups = new List<(string Original, string Backup)>();
             try
             {
                 beforePromotion?.Invoke();
                 Directory.Move(ready, game); runtimePromoted = true;
-                // Move only a recognized predecessor, preserving it until commit.
-                ValidateLauncher(oldLauncher, launcherBytes);
-                if (File.Exists(oldLauncher))
+                // Retire only recognized top-level launchers from older layouts.
+                // Keep each original in backups and restore it on rollback.
+                foreach (var candidate in new[] { launcher, oldLauncher })
                 {
+                    ValidateLauncher(candidate, launcherBytes);
+                    if (!File.Exists(candidate)) continue;
                     var backupRoot = Path.Combine(root, "backups"); Directory.CreateDirectory(backupRoot);
-                    oldLauncherBackup = Path.Combine(backupRoot, "Launcher-" + Guid.NewGuid().ToString("N") + ".exe");
-                    File.Move(oldLauncher, oldLauncherBackup);
+                    var saved = Path.Combine(backupRoot, "Launcher-" + Guid.NewGuid().ToString("N") + ".exe");
+                    File.Move(candidate, saved);
+                    launcherBackups.Add((candidate, saved));
                 }
                 beforeLauncherPromotion?.Invoke();
-                ValidateLauncher(launcher, launcherBytes);
-                if (File.Exists(launcher))
-                {
-                    if (!LauncherPayload.CanReplace(launcher, launcherBytes)) throw new IOException("The play launcher changed during installation.");
-                    var backupRoot = Path.Combine(root, "backups"); Directory.CreateDirectory(backupRoot);
-                    File.Replace(readyLauncher, launcher, Path.Combine(backupRoot, "Launcher-" + Guid.NewGuid().ToString("N") + ".exe"));
-                }
-                else File.Move(readyLauncher, launcher);
                 promoted = true;
             }
             catch
             {
-                if (oldLauncherBackup != null) File.Move(oldLauncherBackup, oldLauncher);
+                foreach (var item in launcherBackups.AsEnumerable().Reverse()) File.Move(item.Backup, item.Original);
                 if (runtimePromoted) Directory.Move(game, ready);
                 if (backup != null && !Directory.Exists(previous)) Directory.Move(backup, previous);
                 throw;
             }
             progress(100, "Ready to play!");
-            return launcher;
+            return Path.Combine(game, "Techno Kitten Adventure.exe");
         }
         finally
         {

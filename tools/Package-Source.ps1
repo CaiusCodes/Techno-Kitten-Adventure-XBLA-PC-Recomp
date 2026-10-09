@@ -10,12 +10,14 @@ $zip = $destination + '.zip'
 if ((Test-Path -LiteralPath $destination) -or (Test-Path -LiteralPath $zip)) { throw 'Choose a fresh source output name.' }
 $files = [Collections.Generic.List[string]]::new()
 foreach ($path in @('.gitignore','.gitattributes','VERSION','Directory.Build.props','global.json','NuGet.Config','README.md','LICENSE','THIRD_PARTY.md','RELEASE_NOTES.md',
-    'docs/BUILD-V1.md','docs/V1.md','docs/DPI-VSYNC.md','docs/ICON.md','.github/ISSUE_TEMPLATE/bug_report.md','packaging/README.txt',
+    'docs/BUILD-V1.md','docs/V1.md','docs/DPI-VSYNC.md','docs/ICON.md','docs/INPUT-AND-SETUP-V1.1.md','docs/PUBLICATION-PREP.md','docs/RELEASE-v0.9.0.md',
+    'docs/screenshots/NOTICE.md','docs/screenshots/main-menu.png','docs/screenshots/options.png','docs/screenshots/adventure-select.png','docs/screenshots/lava.png','docs/screenshots/dream.png','docs/screenshots/scores.png',
+    '.github/ISSUE_TEMPLATE/bug_report.md','packaging/README.txt',
     'src/Tka.Installer/Assets/techno-kitty.svg','src/Tka.Installer/Assets/techno-kitty.ico','src/InstallerLauncher/setup-version.rc.in','tools/Build-Icon.ps1',
     'src/Tka.Host/Assets/game-kitty.svg','src/Tka.Host/Assets/game-kitty.ico','docs/BUILD-BADGE.md',
     'docs/social-preview.svg','docs/social-preview.png','.github/FUNDING.yml','tools/Render-SocialPreview.py',
-    'tools/dotnet.ps1','tools/Build-Installer.ps1','tools/Package-Installer.ps1','tools/Package-Source.ps1',
-    'tools/Test-PortableInstaller.ps1','tools/Test-Installer.ps1','tools/Test-InstallerDpi.ps1','tools/Test-BuildPresentation.ps1','tools/Test-DisplayAspect.ps1','tools/Test-DisplayMenu.ps1','tools/Test-InternalScale.ps1')) { $files.Add($path) }
+    'tools/dotnet.ps1','tools/Build-Installer.ps1','tools/Package-Installer.ps1','tools/Package-Source.ps1','tools/Test-Publication.ps1',
+    'tools/Test-PortableInstaller.ps1','tools/Test-Installer.ps1','tools/Test-InstallerDpi.ps1','tools/Test-BuildPresentation.ps1','tools/Test-DisplayAspect.ps1','tools/Test-DisplayMenu.ps1','tools/Test-InternalScale.ps1','tools/Test-MenuMouse.ps1','tools/Test-ControllerPrompts.ps1')) { $files.Add($path) }
 foreach ($directory in @('src','tools/Tka.AssemblyTool','tools/Tka.AssetTool','packaging/licenses')) {
     foreach ($file in Get-ChildItem -LiteralPath (Join-Path $root $directory) -Recurse -File) {
         $relative = [IO.Path]::GetRelativePath($root, $file.FullName).Replace('\','/')
@@ -27,7 +29,8 @@ foreach ($directory in @('src','tools/Tka.AssemblyTool','tools/Tka.AssetTool','p
 $manifest = @(foreach ($relative in $files | Sort-Object -Unique) {
     $source = Join-Path $root $relative
     if ((Get-Item -LiteralPath $source).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Source link rejected.' }
-    if ($relative -notin @('src/Tka.Installer/Assets/techno-kitty.ico', 'src/Tka.Host/Assets/game-kitty.ico', 'docs/social-preview.png')) {
+    if ($relative -notin @('src/Tka.Installer/Assets/techno-kitty.ico', 'src/Tka.Host/Assets/game-kitty.ico', 'docs/social-preview.png',
+        'docs/screenshots/main-menu.png','docs/screenshots/options.png','docs/screenshots/adventure-select.png','docs/screenshots/lava.png','docs/screenshots/dream.png','docs/screenshots/scores.png')) {
         $content = [IO.File]::ReadAllText($source)
         if ($content.Contains([char]0) -or $content -match '(?i)C:[/\\]Users[/\\]|-----BEGIN (RSA |OPENSSH |EC )?PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9]{30,}') { throw ('Unexpected private/binary data: ' + $relative) }
     }
@@ -39,7 +42,7 @@ foreach ($entry in $manifest) {
     New-Item -ItemType Directory -Path (Split-Path $target) -Force | Out-Null
     Copy-Item -LiteralPath (Join-Path $root $entry.path) -Destination $target
 }
-@{ version = $version; port_code_license = 'MIT'; files = $manifest; assets_included = $false } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $destination 'source-manifest.json')
+@{ version = $version; port_code_license = 'MIT'; files = $manifest; assets_included = $false; screenshots_included = $true; screenshot_notice = 'docs/screenshots/NOTICE.md' } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $destination 'source-manifest.json')
 [IO.Compression.ZipFile]::CreateFromDirectory($destination, $zip, [IO.Compression.CompressionLevel]::Optimal, $false)
 $archive = [IO.Compression.ZipFile]::OpenRead($zip)
 try {
@@ -50,5 +53,5 @@ try {
         if ($hash -ne $entry.sha256) { throw ('Source archive hash mismatch: ' + $entry.path) }
     }
 } finally { $archive.Dispose() }
-Write-Output ('Verified asset-free source files: ' + $manifest.Count)
+Write-Output ('Verified source files (no playable game data; documentation screenshots included): ' + $manifest.Count)
 Get-FileHash -LiteralPath $zip

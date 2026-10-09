@@ -1,6 +1,11 @@
 # V1.0.3 launchers, icon and title badge
 
-Public setup is `Setup Techno Kitten Adventure.exe`. Installation emits
+V0.9.0 places the play launcher at `Game/Techno Kitten Adventure.exe` and embeds
+the asset-free runtime in single-file Setup. The launcher/icon/badge design below
+is retained; see [V1.1 setup and input bridge](INPUT-AND-SETUP-V1.1.md) for the
+current layout and verification.
+
+In V1.0.3, public setup was `Setup Techno Kitten Adventure.exe`. Installation emitted
 `Techno Kitten Adventure.exe` beside Setup and a matching managed host inside
 `Game`. The play launcher remains embedded until installation. All quoted process
 paths support spaces. Source archives contain original icon artwork, never game assets.
@@ -10,16 +15,19 @@ under the project's MIT license. `tools/Build-Icon.ps1` regenerates its transpar
 16–256 pixel Windows icon. Native `game.rc` and managed ApplicationIcon embed the
 same icon. The host assigns it to the actual MonoGame WinForms game window.
 
-`TitleBuildBadge.cs` draws a small box in logical coordinates (16, 676), height 28,
-with a 16 pixel label. It obtains the build version from AssemblyInformationalVersion,
-so the shared project version updates the displayed text automatically.
+`TitleBuildBadge.cs` draws original 5×7 pixel lettering at logical coordinates
+(24,674), with 14-pixel-high cream letters, a navy outline and a cyan/pink underline. There is
+no enclosing box. It obtains the build version from AssemblyInformationalVersion,
+so the shared project version updates the displayed text automatically. A zero
+patch suffix is omitted visually: version 0.9.0 displays as `v0.9`. Artwork is
+cached in one texture and uses point filtering; no imported font is required.
 
 Independently verified original `Helicopter.Game1.Draw` (token 06000009, original
 return IL_0109) already calls `PcDisplay.EndFrame`; the badge uses that existing
 bridge before presentation. No new original-assembly edits are required.
 Original `DrawMenu` gates Press Start on `gameState == GameState.OPENING` (enum 0)
 and `splashScreen == false`. The cached reflection fields use those exact names
-and enum value. `Helicopter.Global.spriteFont` supplies the user's imported font.
+and enum value.
 The badge excludes splash screens, other menus and gameplay. The existing owned
 canvas transform handles internal supersampling and output aspect fitting.
 

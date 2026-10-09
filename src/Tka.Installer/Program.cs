@@ -29,10 +29,10 @@ internal static class Program
         void Write(string text) { if (!string.IsNullOrWhiteSpace(text)) log.WriteLine($"{DateTime.UtcNow:O} {text}"); }
         try
         {
-            if (args.Length == 2 && args[0] == "--install-here")
+            if (args.Length >= 2 && args[0] == "--install-here")
             {
-                new InstallEngine(root, (value, message) => Write($"{value}% {message}"), Write)
-                    .Install(args[1], root, CancellationToken.None);
+                new InstallEngine((value, message) => Write($"{value}% {message}"), Write)
+                    .Install(args[1], root, CancellationToken.None, args.Contains("--unlock-all"));
                 return 0;
             }
             if (args.Length >= 3 && args[0] == "--install")
@@ -40,13 +40,13 @@ internal static class Program
                 // Explicit development fault injection exercises the same
                 // transaction path; these switches are never used by the UI.
                 using var cancel = new CancellationTokenSource();
-                var engine = new InstallEngine(root, (value, message) =>
+                var engine = new InstallEngine((value, message) =>
                 {
                     Write($"{value}% {message}");
                     if (value >= 82 && args.Contains("--test-cancel")) cancel.Cancel();
                 }, Write, args.Contains("--test-rollback") ? () => throw new IOException("TEST: simulated promotion failure.") : null,
                     args.Contains("--test-launcher-rollback") ? () => throw new IOException("TEST: simulated launcher promotion failure.") : null);
-                engine.Install(args[1], args[2], cancel.Token);
+                engine.Install(args[1], args[2], cancel.Token, args.Contains("--unlock-all"));
                 return 0;
             }
             Write("Initializing setup display.");
@@ -56,6 +56,15 @@ internal static class Program
             Write("Creating setup window.");
             using var form = new InstallerForm(root, Write);
             Write("Setup window created.");
+            if (args.Length == 1 && args[0] == "--test-package-picker")
+            {
+                using var picker = InstallerForm.CreatePackagePicker();
+                if (!string.Equals(picker.InitialDirectory, Path.GetDirectoryName(Environment.ProcessPath), StringComparison.OrdinalIgnoreCase)
+                    || !picker.RestoreDirectory || !picker.CheckFileExists)
+                    throw new InvalidOperationException("Package picker directory/flags mismatch.");
+                Write("Package picker PASS: Setup EXE directory; working directory=" + Environment.CurrentDirectory);
+                return 0;
+            }
             if (args.Length == 1 && args[0] == "--ui-smoke")
             {
                 using var timer = new System.Windows.Forms.Timer { Interval = 1500 };

@@ -10,6 +10,8 @@ assignees: ''
 **Windows version and GPU:**
 **Windowed/fullscreen and resolution:**
 **Stage / menu:**
+**Input device (keyboard/mouse or controller model):**
+**Was a controller connected when the problem occurred?**
 
 **Steps to reproduce:**
 

@@ -5,7 +5,10 @@ namespace Tka.Installer;
 
 internal sealed class InstallerForm : Form
 {
-    private static readonly Color Pink = Color.FromArgb(255, 63, 162);
+    internal static OpenFileDialog CreatePackagePicker() => new() {
+        Title = "Select your Techno Kitten Adventure package", Filter = "Xbox 360 package|*.*", CheckFileExists = true,
+        InitialDirectory = Path.GetDirectoryName(Application.ExecutablePath), RestoreDirectory = true };
+    private static readonly Color Pink = Color.FromArgb(255, 123, 167);
     private static readonly Color Cyan = Color.FromArgb(86, 234, 243);
     private readonly TextBox package = new();
     private readonly Button browsePackage;
@@ -14,6 +17,8 @@ internal sealed class InstallerForm : Form
     private readonly Label status;
     private readonly Label percent;
     private readonly Panel progressFill;
+    private readonly CheckBox unlockAll = new();
+    private readonly Bitmap setupArtwork = LoadSetupArtwork();
     private readonly string root;
     private readonly Action<string> log;
     private CancellationTokenSource? cancellation;
@@ -33,36 +38,40 @@ internal sealed class InstallerForm : Form
         // This code-drawn form has one explicit 96-DPI coordinate system for
         // backgrounds, controls and fonts. Do not mix WinForms autoscaling with it.
         AutoScaleMode = AutoScaleMode.None;
-        ClientSize = new Size(800, 560);
+        ClientSize = new Size(800, 610);
         FormBorderStyle = FormBorderStyle.FixedSingle; MaximizeBox = false;
         StartPosition = FormStartPosition.CenterScreen;
-        BackColor = Color.FromArgb(15, 16, 27); ForeColor = Color.White;
-        Font = new Font("Segoe UI", 10);
+        BackColor = Color.FromArgb(14, 23, 40); ForeColor = Color.White;
+        Font = new Font("Consolas", 10);
         DoubleBuffered = true;
-        LabelAt("TECHNO KITTEN", 30, 22, 540, 55, Color.White, 28, FontStyle.Bold);
-        LabelAt("ADVENTURE!", 31, 77, 540, 53, Pink, 25, FontStyle.Bold);
-        LabelAt("Choose your game package", 53, 179, 655, 34, Color.White, 18, FontStyle.Bold);
-        LabelAt("Select your legally obtained Xbox 360 package.", 56, 219, 655, 25, Color.FromArgb(187, 188, 209), 10.5f);
-        ConfigurePath(package, 96, 267, "No package selected");
+        LabelAt("Choose your package", 300, 40, 472, 38, Color.FromArgb(255, 240, 204), 18, FontStyle.Bold);
+        LabelAt("Select your legally obtained\nXbox 360 game package.", 301, 87, 470, 52, Color.FromArgb(174, 190, 211), 11.25f);
+        ConfigurePath(package, 318, 168, "No package selected");
         package.Text = "No package selected";
-        browsePackage = ButtonAt("Choose file…", 600, 255, 144, 44, true, Cyan);
-        browsePackage.BackColor = Color.FromArgb(24, 25, 42);
+        browsePackage = ButtonAt("Choose file…", 300, 222, 472, 44, true, Cyan);
+        browsePackage.BackColor = BackColor;
         browsePackage.Click += (_, _) =>
         {
-            using var picker = new OpenFileDialog { Title = "Select your Techno Kitten Adventure package", Filter = "Xbox 360 package|*.*", CheckFileExists = true };
+            using var picker = CreatePackagePicker();
             if (picker.ShowDialog(this) == DialogResult.OK) package.Text = picker.FileName;
         };
-        LabelAt("To play, launch Techno Kitten Adventure.exe after game installation.\nYour game assets and saves will be saved within the Game folder.", 78, 345, 674, 48, Color.FromArgb(199, 201, 221), 10);
-        status = LabelAt("Choose a package to get started.", 32, 424, 650, 30, Color.FromArgb(210, 213, 228), 10.5f);
-        percent = LabelAt("0%", 704, 424, 64, 27, Cyan, 11, FontStyle.Bold);
+        LabelAt("After setup, play from\nGame\\Techno Kitten Adventure.exe.\nAssets and saves stay in Game.", 301, 295, 470, 76, Color.FromArgb(174, 190, 211), 10.5f);
+        unlockAll.Text = "Unlock all levels and kittens";
+        unlockAll.Location = new Point(316, 397); unlockAll.Size = new Size(450, 27);
+        unlockAll.ForeColor = Color.White; unlockAll.BackColor = Color.Transparent;
+        unlockAll.Font = new Font("Consolas", 10.5f); unlockAll.Cursor = Cursors.Hand;
+        Controls.Add(unlockAll);
+        LabelAt("Optional extra: unlock score-gated kittens.", 316, 428, 450, 24, Color.FromArgb(174, 190, 211), 9.75f);
+        status = LabelAt("Choose a package to get started.", 301, 475, 410, 39, Color.FromArgb(174, 190, 211), 10.5f);
+        percent = LabelAt("0%", 712, 485, 60, 27, Cyan, 11, FontStyle.Bold);
         percent.TextAlign = ContentAlignment.TopRight;
-        var track = new Panel { Location = new Point(32, 460), Size = new Size(736, 5), BackColor = Color.FromArgb(43, 43, 65) };
-        progressFill = new Panel { Location = Point.Empty, Size = new Size(0, 6), BackColor = Pink };
+        var track = new Panel { Location = new Point(301, 517), Size = new Size(470, 5), BackColor = Color.FromArgb(48, 65, 93) };
+        progressFill = new Panel { Location = Point.Empty, Size = new Size(0, 5), BackColor = Cyan };
         track.Controls.Add(progressFill); Controls.Add(track);
-        LabelAt("Your original package stays untouched.\nNo game assets included.", 32, 503, 452, 45, Color.FromArgb(163, 165, 187), 9.5f);
-        cancel = ButtonAt("Close", 510, 498, 100, 44, false);
+        LabelAt("Your package stays untouched.\nNo game assets included.", 301, 550, 226, 42, Color.FromArgb(174, 190, 211), 8.25f);
+        cancel = ButtonAt("Close", 534, 544, 84, 44, false);
         cancel.Click += (_, _) => { if (cancellation != null) { cancellation.Cancel(); status.Text = "Cancelling safely…"; } else Close(); };
-        install = ButtonAt("Install game", 622, 498, 146, 44, true);
+        install = ButtonAt("Install game", 633, 544, 139, 44, true);
         install.Enabled = false;
         package.TextChanged += (_, _) => { install.Enabled = File.Exists(package.Text) && cancellation == null; status.Text = "Ready to install."; };
         AcceptButton = install;
@@ -102,7 +111,7 @@ internal sealed class InstallerForm : Form
             var b = item.Bounds;
             item.Control.Bounds = new Rectangle(Scaled(b.X), Scaled(b.Y), Scaled(b.Width), Scaled(b.Height));
         }
-        ClientSize = new Size(Scaled(800), Scaled(560));
+        ClientSize = new Size(Scaled(800), Scaled(610));
         progressFill.Width = progressValue * progressFill.Parent!.ClientSize.Width / 100;
         ResumeLayout(false);
         Invalidate(true);
@@ -123,7 +132,7 @@ internal sealed class InstallerForm : Form
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        if (disposing) { foreach (var font in layoutFonts.Values) font.Dispose(); layoutFonts.Clear(); }
+        if (disposing) { foreach (var font in layoutFonts.Values) font.Dispose(); layoutFonts.Clear(); setupArtwork.Dispose(); }
     }
 
     // Bounded preview path: exercise the same layout at a chosen effective DPI
@@ -131,7 +140,7 @@ internal sealed class InstallerForm : Form
     internal void PreviewDpi(int dpi)
     {
         if (dpi is < 96 or > 288) throw new ArgumentOutOfRangeException(nameof(dpi));
-        MinimumSize = SizeFromClientSize(new Size(800 * dpi / 96, 560 * dpi / 96));
+        MinimumSize = SizeFromClientSize(new Size(800 * dpi / 96, 610 * dpi / 96));
         ApplyLayoutDpi(dpi);
         foreach (var item in logicalLayout.Where(x => x.Control.Parent == this))
         {
@@ -142,7 +151,7 @@ internal sealed class InstallerForm : Form
                 if (measured.Height > label.Height) throw new InvalidDataException("DPI layout clips text: " + label.Text);
             }
         }
-        if (Math.Abs(ClientSize.Width - Scaled(800)) > 1 || Math.Abs(ClientSize.Height - Scaled(560)) > 1)
+        if (Math.Abs(ClientSize.Width - Scaled(800)) > 1 || Math.Abs(ClientSize.Height - Scaled(610)) > 1)
             throw new InvalidDataException("DPI preview client was constrained.");
         log($"DPI preview passed: {dpi}; client {ClientSize.Width}x{ClientSize.Height}; controls {logicalLayout.Count}.");
     }
@@ -157,13 +166,13 @@ internal sealed class InstallerForm : Form
         if (!File.Exists(package.Text)) { MessageBox.Show(this, "Select your game package first.", "Choose a package", MessageBoxButtons.OK, MessageBoxIcon.Information); return; }
         var source = package.Text;
         cancellation = new CancellationTokenSource();
-        install.Enabled = false; browsePackage.Enabled = false; cancel.Text = "Cancel";
+        install.Enabled = false; browsePackage.Enabled = false; unlockAll.Enabled = false; cancel.Text = "Cancel";
         var progress = new Progress<(int value, string text)>(p => { progressValue = p.value; progressFill.Width = p.value * progressFill.Parent!.ClientSize.Width / 100; percent.Text = p.value + "%"; status.Text = p.text; });
         try
         {
-            gameExecutable = await Task.Run(() => new InstallEngine(root,
+            gameExecutable = await Task.Run(() => new InstallEngine(
                 (value, message) => { log($"{value}% {message}"); ((IProgress<(int, string)>)progress).Report((value, message)); }, log)
-                .Install(source, root, cancellation.Token));
+                .Install(source, root, cancellation.Token, unlockAll.Checked));
             install.Text = "Play now";
             status.Text = "Installed. Ready to play!";
         }
@@ -176,72 +185,119 @@ internal sealed class InstallerForm : Form
         finally
         {
             cancellation.Dispose(); cancellation = null;
-            install.Enabled = true; browsePackage.Enabled = gameExecutable == null; cancel.Text = "Close";
+            install.Enabled = true; browsePackage.Enabled = gameExecutable == null; unlockAll.Enabled = gameExecutable == null; cancel.Text = "Close";
         }
     }
 
     private Label LabelAt(string text, int x, int y, int width, int height, Color color, float size, FontStyle style = FontStyle.Regular)
     {
-        var label = new Label { Text = text, Location = new Point(x, y), Size = new Size(width, height), ForeColor = color, BackColor = Color.Transparent, Font = new Font("Segoe UI", size, style) };
+        var label = new Label { Text = text, Location = new Point(x, y), Size = new Size(width, height), ForeColor = color, BackColor = Color.Transparent, Font = new Font("Consolas", size, style) };
         Controls.Add(label); return label;
     }
     private void ConfigurePath(TextBox box, int x, int y, string placeholder)
     {
-        box.Location = new Point(x, y); box.Size = new Size(472, 28); box.ReadOnly = true; box.TabStop = false;
-        box.BackColor = Color.FromArgb(16, 18, 31); box.ForeColor = Color.FromArgb(212, 216, 234); box.BorderStyle = BorderStyle.None;
-        box.PlaceholderText = placeholder; box.Font = new Font("Segoe UI", 10.5f); Controls.Add(box);
+        box.Location = new Point(x, y); box.Size = new Size(438, 28); box.ReadOnly = true; box.TabStop = false;
+        box.BackColor = Color.FromArgb(10, 17, 32); box.ForeColor = Color.FromArgb(174, 190, 211); box.BorderStyle = BorderStyle.None;
+        box.PlaceholderText = placeholder; box.Font = new Font("Consolas", 10.5f); Controls.Add(box);
     }
     private Button ButtonAt(string text, int x, int y, int width, int height, bool primary, Color? accent = null)
     {
         var button = new SetupButton(primary, accent ?? Pink) { Text = text, Location = new Point(x, y), Size = new Size(width, height), FlatStyle = FlatStyle.Flat,
-            BackColor = BackColor, ForeColor = Color.White, Cursor = Cursors.Hand, Font = new Font("Segoe UI", 10.5f, FontStyle.Bold), UseVisualStyleBackColor = false };
+            BackColor = BackColor, ForeColor = Color.White, Cursor = Cursors.Hand, Font = new Font("Consolas", 10.5f, FontStyle.Bold), UseVisualStyleBackColor = false };
         button.FlatAppearance.BorderSize = primary ? 0 : 1; button.FlatAppearance.BorderColor = Color.FromArgb(91, 64, 126);
         Controls.Add(button); return button;
     }
+    private static Bitmap LoadSetupArtwork()
+    {
+        using var stream = typeof(InstallerForm).Assembly.GetManifestResourceStream("Tka.SetupArtwork")
+            ?? throw new InvalidDataException("Setup artwork is missing.");
+        using var image = new Bitmap(stream);
+        return new Bitmap(image);
+    }
     protected override void OnPaint(PaintEventArgs e)
     {
-        base.OnPaint(e); e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+        base.OnPaint(e);
+        e.Graphics.SmoothingMode = SmoothingMode.None;
+        e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
+        e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
         e.Graphics.ScaleTransform(layoutScale, layoutScale);
-        using var hero = new LinearGradientBrush(new Rectangle(0, 0, 800, 136), Color.FromArgb(31, 24, 49), BackColor, 0f);
-        e.Graphics.FillRectangle(hero, 0, 0, 800, 136);
-        using var line = new Pen(Color.FromArgb(48, 48, 72));
-        e.Graphics.DrawLine(line, 32, 136, 768, 136);
+        using var sky = new SolidBrush(Color.FromArgb(22, 44, 65));
+        e.Graphics.FillRectangle(sky, 0, 0, 274, 610);
+        using var stars = new SolidBrush(Color.FromArgb(87, 80, 110));
+        for (var i = 0; i < 24; i++)
+            e.Graphics.FillRectangle(stars, 12 + (i*67+19)%249, 12 + (i*41+17)%330, 2, 2);
+        DrawPixelTitle(e.Graphics, "TECHNO KITTEN", 20, 38, Color.FromArgb(255, 240, 204));
+        DrawPixelTitle(e.Graphics, "ADVENTURE!", 20, 73, Pink);
+        using var sun = new SolidBrush(Color.FromArgb(255, 191, 105));
+        using var sunset = new SolidBrush(Pink);
+        foreach (var (y, x, width) in new[] { (150,88,92), (162,72,124), (174,60,148), (186,52,164),
+                     (198,52,164), (210,52,164), (222,60,148), (234,72,124), (246,88,92) })
+            e.Graphics.FillRectangle(y < 198 ? sun : sunset, x, y, width, 12);
+        using var peak = new SolidBrush(Color.FromArgb(71, 83, 118));
+        using var peakLight = new SolidBrush(Color.FromArgb(183, 103, 152));
+        for (var row = 0; row < 12; row++)
         {
-            using var card = Rounded(new Rectangle(32, 160, 736, 156), 16);
-            using var fill = new SolidBrush(Color.FromArgb(24, 25, 42));
-            e.Graphics.FillPath(fill, card); e.Graphics.DrawPath(line, card);
-            using var field = Rounded(new Rectangle(52, 254, 532, 46), 10);
-            using var fieldFill = new SolidBrush(Color.FromArgb(16, 18, 31));
-            e.Graphics.FillPath(fieldFill, field); e.Graphics.DrawPath(line, field);
-            using var filePen = new Pen(Color.FromArgb(144, 159, 190), 1.5f);
-            e.Graphics.DrawLines(filePen, new Point[] { new(67,266),new(77,266),new(83,272),new(83,286),new(67,286),new(67,266) });
-            e.Graphics.DrawLines(filePen, new Point[] { new(77,266),new(77,272),new(83,272) });
-            using var note = Rounded(new Rectangle(32, 334, 736, 70), 12);
-            using var noteFill = new SolidBrush(Color.FromArgb(20, 24, 38)); e.Graphics.FillPath(noteFill, note);
-            using var infoPen = new Pen(Cyan, 1.5f); e.Graphics.DrawEllipse(infoPen, 50, 351, 16, 16);
-            e.Graphics.DrawLine(infoPen, 58, 358, 58, 363);
-            using var infoDot = new SolidBrush(Cyan); e.Graphics.FillEllipse(infoDot, 57, 354, 2, 2);
+            e.Graphics.FillRectangle(peak, 28-row*3, 246+row*5, 6+row*6, 5);
+            e.Graphics.FillRectangle(peakLight, 31, 246+row*5, 3+row*3, 5);
         }
-        Color[] colors = [Pink, Color.FromArgb(255, 174, 65), Color.FromArgb(251, 242, 108), Color.FromArgb(104, 230, 151), Cyan, Color.FromArgb(170, 123, 255)];
-        for (var i = 0; i < colors.Length; i++)
-        {
-            using var pen = new Pen(colors[i], 5);
-            e.Graphics.DrawArc(pen, 602 + i * 7, 26 + i * 7, 160 - i * 14, 160 - i * 14, 180, 180);
-        }
-        using var star = new SolidBrush(Cyan);
-        DrawStar(e.Graphics, star, 682, 104, 9);
-        e.Graphics.DrawLine(line, 32, 486, 768, 486);
+        using var sea = new SolidBrush(Color.FromArgb(23, 70, 90));
+        e.Graphics.FillRectangle(sea, 0, 306, 274, 304);
+        using var ripple = new SolidBrush(Color.FromArgb(40, 102, 123));
+        for (var row = 0; row < 10; row++)
+            e.Graphics.FillRectangle(ripple, 15+(row%3)*18, 317+row*24, 228-(row%3)*24, 2);
+        e.Graphics.DrawImage(setupArtwork, new Rectangle(18, 195, 242, 242));
+        using var divider = new SolidBrush(Cyan);
+        e.Graphics.FillRectangle(divider, 272, 0, 3, 610);
+        using var field = PixelFrame(new Rectangle(300,148,472,58), 5);
+        using var fieldFill = new SolidBrush(Color.FromArgb(10, 17, 32));
+        using var border = new Pen(Color.FromArgb(53, 70, 94), 2);
+        e.Graphics.FillPath(fieldFill, field); e.Graphics.DrawPath(border, field);
+        using var extras = PixelFrame(new Rectangle(300,382,472,75), 5);
+        using var extraFill = new SolidBrush(Color.FromArgb(27, 41, 64));
+        e.Graphics.FillPath(extraFill, extras);
     }
     private static void DrawStar(Graphics g, Brush brush, float x, float y, float size)
     {
-        g.FillPolygon(brush, [new PointF(x, y-size), new(x+size*.25f,y-size*.25f),new(x+size,y),new(x+size*.25f,y+size*.25f),
-            new(x,y+size),new(x-size*.25f,y+size*.25f),new(x-size,y),new(x-size*.25f,y-size*.25f)]);
+        g.FillRectangle(brush, x-size, y, size*3, size);
+        g.FillRectangle(brush, x, y-size, size, size*3);
     }
-    internal static GraphicsPath Rounded(Rectangle bounds, int radius)
+    private static readonly Dictionary<char, string[]> TitlePixels = new()
     {
-        var path = new GraphicsPath(); var d = radius * 2;
-        path.AddArc(bounds.X, bounds.Y, d, d, 180, 90); path.AddArc(bounds.Right-d, bounds.Y, d, d, 270, 90);
-        path.AddArc(bounds.Right-d, bounds.Bottom-d, d, d, 0, 90); path.AddArc(bounds.X, bounds.Bottom-d, d, d, 90, 90);
+        ['A'] = ["01110", "11011", "11011", "11111", "11011", "11011", "11011"],
+        ['C'] = ["01111", "11000", "11000", "11000", "11000", "11000", "01111"],
+        ['D'] = ["11110", "11011", "11011", "11011", "11011", "11011", "11110"],
+        ['E'] = ["11111", "11000", "11000", "11110", "11000", "11000", "11111"],
+        ['H'] = ["11011", "11011", "11011", "11111", "11011", "11011", "11011"],
+        ['I'] = ["11111", "00100", "00100", "00100", "00100", "00100", "11111"],
+        ['K'] = ["11011", "11011", "11110", "11100", "11110", "11011", "11011"],
+        ['N'] = ["11001", "11101", "11101", "11011", "11011", "11001", "11001"],
+        ['O'] = ["01110", "11011", "11011", "11011", "11011", "11011", "01110"],
+        ['R'] = ["11110", "11011", "11011", "11110", "11100", "11011", "11011"],
+        ['T'] = ["11111", "00100", "00100", "00100", "00100", "00100", "00100"],
+        ['U'] = ["11011", "11011", "11011", "11011", "11011", "11011", "01110"],
+        ['V'] = ["11011", "11011", "11011", "11011", "11011", "01010", "00100"],
+        ['!'] = ["00100", "00100", "00100", "00100", "00100", "00000", "00100"]
+    };
+    private static void DrawPixelTitle(Graphics g, string text, int x, int y, Color color)
+    {
+        using var ink = new SolidBrush(color);
+        foreach (var letter in text)
+        {
+            if (TitlePixels.TryGetValue(letter, out var rows))
+                for (var row = 0; row < 7; row++)
+                    for (var column = 0; column < 5; column++)
+                        if (rows[row][column] == '1')
+                            g.FillRectangle(ink, x+column*3, y+row*3, 3, 3);
+            x += 18;
+        }
+    }
+    internal static GraphicsPath PixelFrame(Rectangle bounds, int step)
+    {
+        var path = new GraphicsPath();
+        var x = bounds.X; var y = bounds.Y; var right = bounds.Right; var bottom = bounds.Bottom;
+        path.AddPolygon(new Point[] { new(x+step,y), new(right-step,y), new(right-step,y+step), new(right,y+step),
+            new(right,bottom-step), new(right-step,bottom-step), new(right-step,bottom), new(x+step,bottom),
+            new(x+step,bottom-step), new(x,bottom-step), new(x,y+step), new(x+step,y+step) });
         path.CloseFigure(); return path;
     }
     // Render the completed screen with real controls, without importing a package.
@@ -266,7 +322,7 @@ internal sealed class InstallerForm : Form
         {
             this.primary = primary;
             this.accent = accent;
-            // Own every pixel, including the rounded corners. Native flat-button
+            // Own every pixel, including the stepped corners. Native flat-button
             // background/focus painting can otherwise leave rectangular remnants
             // when a disabled or default button changes state.
             SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
@@ -277,14 +333,20 @@ internal sealed class InstallerForm : Form
         protected override void OnPaint(PaintEventArgs e)
         {
             e.Graphics.Clear(BackColor);
-            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            e.Graphics.SmoothingMode = SmoothingMode.None;
             var scale = Height / 44f;
             var inset = Math.Max(1, (int)Math.Round(scale));
-            using var shape = Rounded(new Rectangle(inset, inset, Width-inset*3, Height-inset*3), Math.Max(1, (int)Math.Round(10 * scale)));
-            var color = !Enabled ? Color.FromArgb(53, 43, 65) : primary ? (hover ? ControlPaint.Light(accent, .15f) : accent) : hover ? Color.FromArgb(44, 45, 65) : Color.FromArgb(29, 30, 46);
+            using var shape = PixelFrame(new Rectangle(inset, inset, Width-inset*3, Height-inset*3), Math.Max(1, (int)Math.Round(4 * scale)));
+            var color = !Enabled ? Color.FromArgb(42, 51, 69) : primary ? (hover ? ControlPaint.Light(accent, .15f) : accent) : hover ? Color.FromArgb(49, 70, 97) : Color.FromArgb(37, 56, 83);
+            using var shadowShape = PixelFrame(new Rectangle(inset*3, inset*4, Width-inset*5, Height-inset*5), Math.Max(1, (int)Math.Round(4 * scale)));
+            using var shadow = new SolidBrush(Color.FromArgb(6, 12, 28));
+            e.Graphics.FillPath(shadow, shadowShape);
             using var fill = new SolidBrush(color); e.Graphics.FillPath(fill, shape);
-            if (!primary || Focused) { using var border = new Pen(Focused ? Color.White : Color.FromArgb(67, 68, 91)); e.Graphics.DrawPath(border, shape); }
-            var textColor = !Enabled ? Color.FromArgb(184, 170, 193) : primary && accent == Cyan ? Color.FromArgb(9, 25, 33) : Color.White;
+            using var border = new Pen(Focused ? Color.White : primary && Enabled ? accent : Color.FromArgb(55, 74, 99), Math.Max(1, scale));
+            e.Graphics.DrawPath(border, shape);
+            using var shine = new SolidBrush(Enabled ? Color.FromArgb(228, 230, 255) : Color.FromArgb(78, 88, 108));
+            e.Graphics.FillRectangle(shine, inset*6, inset*2, Width-inset*13, inset);
+            var textColor = !Enabled ? Color.FromArgb(146, 157, 178) : primary ? Color.FromArgb(16, 32, 48) : Color.FromArgb(225, 231, 243);
             TextRenderer.DrawText(e.Graphics, Text, Font, ClientRectangle, textColor, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
         }
     }

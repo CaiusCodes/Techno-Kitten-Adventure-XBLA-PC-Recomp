@@ -1,5 +1,5 @@
 param(
-    [string]$Zip = 'out/Techno Kitten Adventure Setup - V1.0.3.zip',
+    [string]$Zip = 'out/Techno-Kitten-Adventure-XBLA-PC-Recomp-v0.9.0.zip',
     [ValidatePattern('^[a-zA-Z0-9_-]+$')][string]$Fixture = 'embedded-launcher-check',
     [string]$PackagePath
 )
@@ -22,28 +22,29 @@ function Run-Checked([string]$Exe, [string[]]$Arguments) {
     $process.Dispose()
 }
 [IO.Compression.ZipFile]::ExtractToDirectory($zipPath, $testRoot)
-$manifest = Get-Content -LiteralPath (Join-Path $testRoot 'release-manifest.json') -Raw | ConvertFrom-Json
-foreach ($entry in $manifest.files) {
-    if ((Get-FileHash -LiteralPath (Join-Path $testRoot $entry.path)).Hash -ne $entry.sha256) { throw ('Release hash mismatch: ' + $entry.path) }
-}
-$launcher = Join-Path $testRoot 'Setup Techno Kitten Adventure.exe'
-if (Test-Path -LiteralPath (Join-Path $testRoot 'Techno Kitten Adventure.exe')) { throw 'Play EXE must not be in the initial ZIP.' }
+$zipRoot = Join-Path $testRoot 'Techno Kitten Adventure XBLA Recomp'
+$zipEntries = [IO.Compression.ZipFile]::OpenRead($zipPath)
+try {
+    $names = @($zipEntries.Entries | ForEach-Object FullName)
+    if (-not ($names -contains 'Techno Kitten Adventure XBLA Recomp/Setup Techno Kitten Adventure.exe') -or
+        -not ($names -contains 'Techno Kitten Adventure XBLA Recomp/README.txt') -or
+        @($names | Where-Object { $_ -notmatch '^Techno Kitten Adventure XBLA Recomp/(Setup Techno Kitten Adventure\.exe|README\.txt|licenses/[^/]+)$' }).Count -gt 0)
+        { throw 'Unexpected initial ZIP layout.' }
+} finally { $zipEntries.Dispose() }
+$launcher = Join-Path $zipRoot 'Setup Techno Kitten Adventure.exe'
+if (Test-Path -LiteralPath (Join-Path $zipRoot 'Game')) { throw 'Game must not be in the initial ZIP.' }
 Run-Checked $launcher @('--install-here', $package)
-$game = Join-Path $testRoot 'Game'
+$game = Join-Path $zipRoot 'Game'
 if (!(Test-Path -LiteralPath (Join-Path $game 'Techno Kitten Adventure.exe')) -or
-    (Test-Path -LiteralPath (Join-Path $testRoot 'runtime')) -or
-    (Test-Path -LiteralPath (Join-Path $testRoot 'resources/installer/Game'))) { throw 'Incorrect install location.' }
-$shared = Get-Content -LiteralPath (Join-Path $testRoot 'resources/game-shared-files.json') -Raw | ConvertFrom-Json
-foreach ($entry in $shared) {
-    if ((Get-FileHash -LiteralPath (Join-Path $game $entry.Path)).Hash -ne $entry.Sha256) { throw ('Shared runtime mismatch: ' + $entry.Path) }
-}
-$unique = @(Get-ChildItem -LiteralPath (Join-Path $testRoot 'resources/game') -File -Recurse)
-foreach ($file in $unique) {
-    $relative = [IO.Path]::GetRelativePath((Join-Path $testRoot 'resources/game'), $file.FullName)
-    if ((Get-FileHash -LiteralPath (Join-Path $game $relative)).Hash -ne (Get-FileHash -LiteralPath $file.FullName).Hash) { throw ('Runtime mismatch: ' + $relative) }
+    (Test-Path -LiteralPath (Join-Path $zipRoot 'runtime')) -or
+    (Test-Path -LiteralPath (Join-Path $zipRoot 'resources'))) { throw 'Incorrect install location.' }
+$manifest = Get-Content -LiteralPath (Join-Path $game 'release-manifest.json') -Raw | ConvertFrom-Json
+if ($manifest.assets_included -or $manifest.format -ne 2) { throw 'Invalid installed runtime manifest.' }
+foreach ($entry in $manifest.files) {
+    if ((Get-FileHash -LiteralPath (Join-Path $game $entry.path)).Hash -ne $entry.sha256) { throw ('Runtime hash mismatch: ' + $entry.path) }
 }
 Write-Output 'Fresh EXE-relative installation and runtime hashes passed. Checking gameplay and local saves.'
-Run-Checked (Join-Path $testRoot 'Techno Kitten Adventure.exe') @((Join-Path $game 'Helicopter.dll'), (Join-Path $game 'Content'), '31', '--fixed60', '--scripted', '--popaganda-test')
+Run-Checked (Join-Path $game 'Techno Kitten Adventure.exe') @((Join-Path $game 'Helicopter.dll'), (Join-Path $game 'Content'), '31', '--fixed60', '--scripted', '--popaganda-test')
 $gameLog = Get-ChildItem -LiteralPath (Join-Path $game 'logs') -Filter 'baseline-*.log' | Sort-Object LastWriteTime -Descending | Select-Object -First 1
 $logText = Get-Content -LiteralPath $gameLog.FullName -Raw
 if ($logText -notmatch 'Game.Run returned normally' -or $logText -notmatch '-PLAY.png' -or $logText -notmatch 'Camera probe: effectIndex=0') { throw 'Popaganda gameplay check did not complete.' }
@@ -55,7 +56,7 @@ $preserve = @($save + (Get-Item -LiteralPath $sentinel) | ForEach-Object {
     @{ Path = [IO.Path]::GetRelativePath($game, $_.FullName); Hash = (Get-FileHash -LiteralPath $_.FullName).Hash }
 })
 Run-Checked $launcher @('--install-here', $package)
-$backups = @(Get-ChildItem -LiteralPath (Join-Path $testRoot 'backups') -Directory)
+$backups = @(Get-ChildItem -LiteralPath (Join-Path $zipRoot 'backups') -Directory)
 if ($backups.Count -ne 1) { throw 'Expected one previous-install backup.' }
 $backup = $backups[0]
 foreach ($entry in $preserve) {
@@ -64,13 +65,13 @@ foreach ($entry in $preserve) {
     }
 }
 if ((Get-FileHash -LiteralPath $package).Hash -ne $sourceHash) { throw 'Original package changed.' }
-if (@(Get-ChildItem -LiteralPath $testRoot -Directory -Filter '.install-*').Count -ne 0) { throw 'Staging was not cleaned up.' }
+if (@(Get-ChildItem -LiteralPath $zipRoot -Directory -Filter '.install-*').Count -ne 0) { throw 'Staging was not cleaned up.' }
 @{
-    release_files_verified = $manifest.files.Count
-    installed_runtime_files_verified = $shared.Count + $unique.Count
-    installer_root = $testRoot
+    zip_files_verified = $names.Count
+    installed_runtime_files_verified = $manifest.files.Count
+    installer_root = $zipRoot
     installation_beside_setup = $true
-    top_level_play_launcher = $true
+    game_folder_play_launcher = $true
     play_launcher_absent_before_install = $true
     different_working_directory = $true
     popaganda_normal_exit = $true

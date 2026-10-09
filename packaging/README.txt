@@ -1,33 +1,44 @@
-TECHNO KITTEN ADVENTURE! — PC V1.0.3
+TECHNO KITTEN ADVENTURE! — PC V0.9.0
 
 Free and open source. New port code is MIT-licensed; you may use, modify
 and redistribute it, including commercially, while retaining the required
 notices. See licenses/Port-Code.txt and the other third-party license files.
 No rights to the original game or its assets are granted by this license.
 
-Extract this entire folder to a writable location where you want to keep
-the game, then open "Setup Techno Kitten Adventure.exe".
-Keep its resources folder beside it. No developer tools or separate .NET
-installation are required.
+Extract the "Techno Kitten Adventure XBLA Recomp" folder from the ZIP to a
+writable location where you want the game, then open "Setup Techno Kitten
+Adventure.exe". No developer tools or separate .NET installation are required.
 
 Choose your legally obtained Xbox 360 Techno Kitten Adventure package.
-The play EXE is embedded in Setup and appears beside it only after installation. Supporting files
-stay in Game, with saves/settings in Game\userdata. No location picker is needed.
+The play EXE and asset-free Windows runtime are embedded in Setup. After
+installation, the play EXE is in Game beside resources and the release manifest.
+Saves/settings stay in Game\userdata. No location picker is needed.
 Setup extracts your files, converts the original
 graphics, fonts and shaders, and prepares the Windows game automatically.
 Your original package is opened read-only and never changed.
 
 Click Play now when setup finishes. Later, open:
-  Techno Kitten Adventure.exe
+  Game\Techno Kitten Adventure.exe
+
+SETUP EXTRAS
+  The optional "Unlock all levels and kittens" checkbox raises the game's
+  five score-gated kitten unlock values in the portable save. All five stages
+  are already available in full mode. On reinstall, the old save is kept in
+  the previous-install backup.
 
 Normal PC play uses full mode. The trial setting is only available as an
 explicit developer regression-test option.
 
 KEYBOARD
-  S       Start / pause
+  Enter   Start in menus
+  Esc     Back in menus / pause during play
+  S       Original Start / pause shortcut
   Space   Select / start flying / hold to rise
   B       Back / resume
-  Arrows  Move through menus
+  Arrows or WASD  Move through menus
+  Mouse   Left click advances from Press Start. In menus, hover selects an
+          item; left click = A; right click = B. The cursor appears in menus
+          and hides during active play.
 
 DISPLAY OPTIONS
   VSync is off by default and remains off after display changes.
@@ -44,15 +55,15 @@ DISPLAY OPTIONS
   Oversized windows also preserve 16:9 when Windows constrains their size.
   Changes apply immediately and save to Game/userdata/settings/display.json.
 
-Saves are inside Game\userdata. Keep Techno Kitten Adventure.exe together with
-the complete Game folder when moving or backing up the game. Reinstalling
+Saves are inside Game\userdata. Keep the complete Setup folder, including
+Game, when moving or backing up the game. Reinstalling
 preserves userdata and keeps the previous installation under backups. Older runtime
 installations are migrated automatically; saves move with them.
 
-V1.0.3 TEST COVERAGE AND LIMITATIONS
+V0.9.0 TEST COVERAGE AND LIMITATIONS
 First-stage gameplay and original menus have been tested. Display mode and
 resolution are integrated into Options. Music spectrum visuals, VSync/FPS
-controls and complete stage/controller testing remain in progress.
+physical controls and complete stage/controller testing remain in progress.
 No separate DLC package is currently supported.
 
 This download contains no original game program, artwork, music or DLC.

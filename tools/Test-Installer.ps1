@@ -1,5 +1,6 @@
 param([string]$Release = 'out/TKA-PC-Installer-v103',
     [ValidatePattern('^[a-zA-Z0-9_-]+$')][string]$FixtureName = 'embedded-launcher-check',
+    [string]$FixturePath,
     [switch]$Legacy,
     [switch]$LegacyName,
     [string]$PackagePath)
@@ -9,7 +10,9 @@ Push-Location $projectRoot
 try {
     $installer = [IO.Path]::GetFullPath((Join-Path $Release 'Setup Techno Kitten Adventure.exe'))
     $package = [IO.Path]::GetFullPath($(if ($PackagePath) { $PackagePath } else { '../XBLA package Techno Kitten Adventure!/584E07D2/00000002/D1BDA9ABE3E4FABFF0DC2FC779D2AF61D975840C58' }))
-    $fixture = Join-Path $projectRoot ('private/' + $FixtureName)
+    $fixture = if ($FixturePath) { [IO.Path]::GetFullPath($FixturePath) } else { Join-Path $projectRoot ('private/' + $FixtureName) }
+    if (-not $fixture.StartsWith((Join-Path $projectRoot 'private') + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase))
+        { throw 'Installer fault fixture must stay in the local private folder.' }
     $game = Join-Path $fixture $(if ($Legacy) { 'runtime' } else { 'Game' })
     if (-not (Test-Path -LiteralPath (Join-Path $game 'tka-install.json'))) { throw 'Create the private installer fixture first. Do not point this test at a personal installation.' }
     function Invoke-InstallerTest([string]$InputFile, [string]$Fault = '') {
@@ -73,7 +76,8 @@ try {
     $backup = Get-ChildItem -LiteralPath (Join-Path $fixture 'backups') -Directory | Sort-Object LastWriteTime -Descending | Select-Object -First 1
     $backupPreserved = $backup -and (Get-TreeFingerprint $backup.FullName) -eq $treeBefore
     if ($code -ne 0 -or -not $savePreserved -or -not (Test-Path -LiteralPath $sentinel) -or -not $backupPreserved -or
-        -not (Test-Path -LiteralPath (Join-Path $fixture 'Techno Kitten Adventure.exe')) -or
+        -not (Test-Path -LiteralPath (Join-Path $game 'Techno Kitten Adventure.exe')) -or
+        (Test-Path -LiteralPath $rootLauncher) -or
         ($LegacyName -and (Test-Path -LiteralPath $rootLauncher)) -or ($Legacy -and (Test-Path -LiteralPath (Join-Path $fixture 'runtime')))) { throw 'FAILED: reinstall preservation' }
     $results.Add(@{ test = 'successful reinstall'; exit = $code; save_preserved = $savePreserved; previous_game_backup_unchanged = [bool]$backupPreserved })
     if ($launcherExisted -and @((Get-ChildItem -LiteralPath (Join-Path $fixture 'backups') -File -Filter 'Launcher-*.exe') | Where-Object { (Get-FileHash -LiteralPath $_.FullName).Hash -eq $launcherBefore }).Count -eq 0) { throw 'Previous launcher backup missing.' }

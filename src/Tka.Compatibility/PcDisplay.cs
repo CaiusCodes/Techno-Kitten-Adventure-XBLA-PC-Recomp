@@ -23,10 +23,11 @@ public static class PcDisplay
 
     public static void Initialize(Game game, GraphicsDeviceManager manager)
     {
+        PcInput.Initialize(game);
         graphics = manager;
         window = game.Window;
         for (var type = game.GetType(); type != null; type = type.BaseType)
-            if (type.FullName == "Helicopter.Game1") { buildBadge = new TitleBuildBadge(game, type); break; }
+            if (type.FullName == "Helicopter.Game1") { buildBadge = new TitleBuildBadge(game, type); ControllerPrompts.Initialize(type, game); break; }
         lastPresentation = null;
         Current = new();
         try
@@ -100,6 +101,7 @@ public static class PcDisplay
 
     public static void BeginFrame()
     {
+        ControllerPrompts.Sample();
         var device = graphics.GraphicsDevice;
         var size = new Point(1280 * Current.InternalScale, 720 * Current.InternalScale);
         if (canvas is not null && (canvas.Width != size.X || canvas.Height != size.Y)) { canvas.Dispose(); canvas = null; }

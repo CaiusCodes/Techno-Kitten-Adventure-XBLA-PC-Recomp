@@ -10,26 +10,34 @@ try {
     $releaseRoot = [IO.Path]::GetFullPath($Release)
     $zipPath = [IO.Path]::GetFullPath($Zip)
     if (Test-Path -LiteralPath $zipPath) { throw 'ZIP already exists; choose a new filename.' }
-    $manifest = Get-Content -LiteralPath (Join-Path $releaseRoot 'release-manifest.json') -Raw | ConvertFrom-Json
-    if ($manifest.version -ne $version -or $manifest.assets_included -ne $false) { throw 'Release manifest disagrees with VERSION or includes game assets.' }
+    $folder = 'Techno Kitten Adventure XBLA Recomp/'
+    $files = @('Setup Techno Kitten Adventure.exe', 'README.txt') +
+        @(Get-ChildItem -LiteralPath (Join-Path $releaseRoot 'licenses') -Recurse -File | ForEach-Object {
+            [IO.Path]::GetRelativePath($releaseRoot, $_.FullName).Replace('\','/')
+        })
+    foreach ($name in $files) {
+        if (-not (Test-Path -LiteralPath (Join-Path $releaseRoot $name) -PathType Leaf)) { throw ('Missing release file: ' + $name) }
+    }
+    if (-not (Get-Content -LiteralPath (Join-Path $releaseRoot 'README.txt') -Raw).Contains('PC V' + $version))
+        { throw 'Packaged README disagrees with VERSION.' }
     $file = [IO.File]::Open($zipPath, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
     try {
         $archive = [IO.Compression.ZipArchive]::new($file, [IO.Compression.ZipArchiveMode]::Create, $true)
         try {
-            foreach ($entry in $manifest.files) {
-                $source = [IO.Path]::GetFullPath((Join-Path $releaseRoot $entry.path))
+            foreach ($name in $files) {
+                $source = [IO.Path]::GetFullPath((Join-Path $releaseRoot $name))
                 if (-not $source.StartsWith($releaseRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw 'Invalid release path.' }
-                if ((Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash -ne $entry.sha256) { throw ('Release file changed: ' + $entry.path) }
-                $null = [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, $source, $entry.path.Replace('\', '/'), [IO.Compression.CompressionLevel]::Optimal)
+                $null = [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, $source, $folder + $name, [IO.Compression.CompressionLevel]::Optimal)
             }
-            $null = [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, (Join-Path $releaseRoot 'release-manifest.json'), 'release-manifest.json')
         } finally { $archive.Dispose() }
     } finally { $file.Dispose() }
-    # Only the build-time allowlist was archived. Test logs, imported games and
-    # backups created beside an installer after its build cannot enter this ZIP.
+    # Only Setup, README and notices are archived. Runtime files and the
+    # manifest are embedded in Setup and extracted into Game after import.
     $check = [IO.Compression.ZipFile]::OpenRead($zipPath)
     try {
-        if ($check.Entries.Count -ne $manifest.files.Count + 1 -or @($check.Entries | Where-Object { $_.FullName -match '(?i)^(Game|runtime|logs|backups)/|\.(xnb|wma|xwb|xsb|xgs|xenos|mgfxo)$|(^|/)(Helicopter\.(exe|dll)|GameInfo\.(xml|bin)|ScoreInfo)$' }).Count -gt 0) { throw 'Unexpected ZIP inventory.' }
+        if ($check.Entries.Count -ne $files.Count -or
+            @($check.Entries | Where-Object { $_.FullName -notlike ($folder + '*') -or $_.FullName -match '(?i)\.(xnb|wma|xwb|xsb|xgs|xenos|mgfxo)$|(^|/)(Helicopter\.(exe|dll)|GameInfo\.(xml|bin)|ScoreInfo)$' }).Count -gt 0)
+            { throw 'Unexpected ZIP inventory.' }
     } finally { $check.Dispose() }
     Get-FileHash -LiteralPath $zipPath -Algorithm SHA256
 } finally { Pop-Location }

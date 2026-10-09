@@ -2,8 +2,13 @@ param([ValidatePattern('^[a-zA-Z0-9_-]+$')][string]$Fixture = 'aspect-v103-check
 $ErrorActionPreference = 'Stop'
 $project = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $root = Join-Path $project ('private/' + $Fixture)
+if (Test-Path -LiteralPath (Join-Path $root 'Techno Kitten Adventure XBLA Recomp/Game')) {
+    $root = Join-Path $root 'Techno Kitten Adventure XBLA Recomp'
+}
 $game = Join-Path $root 'Game'
 $exe = Join-Path $game 'Techno Kitten Adventure.exe'
+$hostExe = Join-Path $game 'resources/game/Techno Kitten Adventure.exe'
+$splitRuntime = Test-Path -LiteralPath $hostExe
 Add-Type -AssemblyName System.Drawing
 if (-not ('TkaWindowIcon' -as [type])) {
     Add-Type @'
@@ -30,8 +35,11 @@ public static class TkaWindowIcon {
 }
 '@
 }
-$start = [Diagnostics.ProcessStartInfo]::new($exe)
+$start = [Diagnostics.ProcessStartInfo]::new($(if ($splitRuntime) { $hostExe } else { $exe }))
 $start.UseShellExecute = $false; $start.CreateNoWindow = $true; $start.WorkingDirectory = $project
+if ($splitRuntime) {
+    $start.ArgumentList.Add('--game-root'); $start.ArgumentList.Add($game)
+}
 foreach ($arg in @((Join-Path $game 'Helicopter.dll'), (Join-Path $game 'Content'), '9', '--fixed60', '--scripted')) { $start.ArgumentList.Add($arg) }
 $began = Get-Date
 $process = [Diagnostics.Process]::Start($start)
@@ -65,16 +73,17 @@ try {
     if (-not $process.WaitForExit(20000)) { $process.Kill(); throw 'Game presentation check timed out.' }
     if ($process.ExitCode -ne 0) { throw 'Game presentation check failed.' }
 } finally { if (-not $process.HasExited) { $process.Kill() }; $process.Dispose() }
-$frames = Get-ChildItem -LiteralPath (Join-Path $game 'logs') -Directory -Filter 'frames-*' | Where-Object LastWriteTime -ge $began | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+$captureLogs = if ($splitRuntime) { Join-Path $game 'resources/game/logs' } else { Join-Path $game 'logs' }
+$frames = Get-ChildItem -LiteralPath $captureLogs -Directory -Filter 'frames-*' | Where-Object LastWriteTime -ge $began | Sort-Object LastWriteTime -Descending | Select-Object -First 1
 if (-not $frames) { throw 'No new captured frames.' }
 $results = @()
 foreach ($file in Get-ChildItem -LiteralPath $frames.FullName -Filter '*.png' | Sort-Object Name) {
     $bitmap = [Drawing.Bitmap]::FromFile($file.FullName)
     try {
-        # The badge's exact cyan stem signature at logical 720p coordinates.
+        # The pixel version label's cyan underline at logical 720p coordinates.
         $stem = $true
-        foreach ($y in @(678,688,700)) {
-            $color = $bitmap.GetPixel(17,$y)
+        foreach ($y in @(693,694)) {
+            $color = $bitmap.GetPixel(26,$y)
             $stem = $stem -and $color.R -eq 69 -and $color.G -eq 233 -and $color.B -eq 245
         }
         $shouldShow = $file.Name -eq '01-OPENING.png'

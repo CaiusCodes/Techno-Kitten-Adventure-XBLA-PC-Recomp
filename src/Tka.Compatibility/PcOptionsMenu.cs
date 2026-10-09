@@ -72,6 +72,37 @@ public static class PcOptionsMenu
         return label;
     }
 
+    public static bool MouseTarget(object menu, Point point, out int row, out int direction)
+    {
+        row = direction = 0;
+        if (!States.TryGetValue(menu, out var state)) return false;
+        // Original ON/OFF atlas draws: x=900/1060, y=171/234/298,
+        // heights 41 and widths 92/119, with eight pixels of click padding.
+        for (var i = 0; i < 3; i++)
+        {
+            var y = new[] { 171, 234, 298 }[i];
+            if (new Rectangle(892, y - 8, 108, 57).Contains(point)) { row = i; direction = -1; return true; }
+            if (new Rectangle(1052, y - 8, 135, 57).Contains(point)) { row = i; direction = 1; return true; }
+        }
+        // Match the actual font scale and position used by DrawValues.
+        var size = PcDisplay.Resolutions[PcDisplay.Current.Resolution];
+        foreach (var (text, y, index) in new[] {
+            (PcDisplay.Current.Fullscreen ? "< FULLSCREEN >" : "< WINDOWED >", 402, 3),
+            ($"< {size.X} x {size.Y} >", 469, 4) })
+        {
+            var measure = state.Font.MeasureString(text);
+            var scale = Math.Min(56 / measure.Y, 510 / measure.X);
+            var left = 960 - measure.X * scale / 2;
+            if (new Rectangle((int)left - 8, y - 36, (int)Math.Ceiling(measure.X * scale) + 16, 72).Contains(point))
+            {
+                row = index;
+                direction = point.X < left + state.Font.MeasureString("<").X * scale + 12 ? -1 : 1;
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Called immediately after original Menu.Update navigation/animation.
     public static void BeforeActions(object menu, object input)
     {

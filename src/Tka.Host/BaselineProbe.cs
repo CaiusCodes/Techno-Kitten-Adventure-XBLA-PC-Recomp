@@ -26,10 +26,12 @@ public static class BaselineProbe
     private static readonly FieldInfo Active = typeof(Keyboard).GetField("_isActive", BindingFlags.Static | BindingFlags.NonPublic)!;
     private static readonly FieldInfo KeyList = typeof(Keyboard).GetField("_keys", BindingFlags.Static | BindingFlags.NonPublic)!;
 
-    public static Game Create(Type original, Action<string> write, bool simulateInput, bool displayTest = false, bool optionsTest = false, bool popagandaTest = false)
+    public static Game Create(Type original, Action<string> write, bool simulateInput, bool displayTest = false, bool optionsTest = false, bool popagandaTest = false, bool pcInputTest = false)
     {
         cameraDiagnostics = popagandaTest;
         if (popagandaTest) Steps = [(4, Keys.S), (6, Keys.Space), (8, Keys.Right), (10, Keys.Space), (12, Keys.Space), (14, Keys.Space), (18, Keys.Space), (24, Keys.S), (27, Keys.B)];
+        if (pcInputTest) Steps = [(4, Keys.Enter), (6, Keys.D), (7, Keys.Space), (10, Keys.Escape),
+            (12, Keys.Space), (14, Keys.Space), (16, Keys.Space), (19, Keys.Escape)];
         if (displayTest) Steps = [(4, Keys.S), (6, Keys.Right), (7, Keys.Space),
             (9, Keys.Down), (10, Keys.Down), (11, Keys.Down), (12, Keys.Right),
             (14, Keys.Down), (15, Keys.Right), (17, Keys.Right), (19, Keys.Right), (21, Keys.Right),
@@ -71,6 +73,13 @@ public static class BaselineProbe
     public static void BeforeUpdate()
     {
         if (!scripted) return;
+        // Ignore physical pointer movement/click edges during scripted keyboard
+        // runs. Otherwise a cursor already over a menu item can steer the test.
+        // Normal play never enters this opt-in branch; MenuMouseProbe supplies
+        // its own snapshots after Draw, outside this keyboard-test boundary.
+        var mouse = Mouse.GetState();
+        typeof(Tka.Compatibility.PcInput).GetField("previousMouse", BindingFlags.Static | BindingFlags.NonPublic)!.SetValue(null, mouse);
+        typeof(Tka.Compatibility.PcInput).GetField("previousPosition", BindingFlags.Static | BindingFlags.NonPublic)!.SetValue(null, new Microsoft.Xna.Framework.Point(mouse.X, mouse.Y));
         previousActive = (bool)Active.GetValue(null)!;
         var keys = (List<Keys>)KeyList.GetValue(null)!;
         previousKeys = keys.ToArray();
@@ -100,6 +109,8 @@ public static class BaselineProbe
     public static void AfterDraw(Game game)
     {
         if (!Timer.IsRunning) Timer.Start();
+        if (Timer.Elapsed.TotalSeconds >= 3) ControllerPromptProbe.Run(game, log);
+        if (Timer.Elapsed.TotalSeconds >= 5) MenuMouseProbe.Run(game, log);
         if (captures >= 12 || Timer.Elapsed.TotalSeconds < captures * 3) return;
         var device = game.GraphicsDevice;
         var pp = device.PresentationParameters;

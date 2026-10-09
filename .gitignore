@@ -7,8 +7,11 @@
 !/docs/DPI-VSYNC.md
 !/docs/ICON.md
 !/docs/BUILD-BADGE.md
+!/docs/INPUT-AND-SETUP-V1.1.md
+!/docs/PUBLICATION-PREP.md
 /docs/*.png
 !/docs/social-preview.png
+!/docs/RELEASE-v0.9.0.md
 /Game/
 /runtime/
 /resources/
@@ -53,3 +56,6 @@ ScoreInfo
 .env
 .env.*
 !.env.example
+/tools/Build-Baseline.ps1
+/tools/Extract-Baseline.ps1
+/tools/Test-DefaultDisplay.ps1

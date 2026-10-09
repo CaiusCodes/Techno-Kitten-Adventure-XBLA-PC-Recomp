@@ -68,6 +68,8 @@ foreach (var instruction in method.Body.Instructions)
 }
 if (bridges.Count != 1) throw new InvalidDataException("Expected exactly one verified Exiting subscription.");
 var pcMenuBridges = PcMenuPatches.Apply(module);
+var pcInputBridges = PcInputPatches.Apply(module);
+var controllerPromptBridges = ControllerPromptPatches.Apply(module);
 var internalRenderBridges = InternalRenderPatches.Apply(module);
 module.Attributes &= ~(Mono.Cecil.ModuleAttributes.Required32Bit | Mono.Cecil.ModuleAttributes.StrongNameSigned);
 module.RuntimeVersion = "v4.0.30319";
@@ -77,8 +79,8 @@ module.Assembly.Name.PublicKey = Array.Empty<byte>();
 Directory.CreateDirectory(Path.GetDirectoryName(output)!);
 module.Write(output);
 File.WriteAllText(output + ".retarget.json", JsonSerializer.Serialize(new {
-    input_sha256 = expected, output_sha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(output))),
-    abi_bridge_edits = bridges.Count, bridges, pc_menu_bridges = pcMenuBridges, internal_render_bridges = internalRenderBridges, mappings
+    input_sha256 = expected, output_sha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(output))), controller_prompt_bridges = controllerPromptBridges,
+    abi_bridge_edits = bridges.Count, bridges, pc_menu_bridges = pcMenuBridges, pc_input_bridges = pcInputBridges, internal_render_bridges = internalRenderBridges, mappings
 }, new JsonSerializerOptions { WriteIndented = true }));
 Console.WriteLine($"Retargeted {mappings.Count} type references and {bridges.Count} verified ABI bridge. Output: {output}");
 return 0;

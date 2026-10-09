@@ -16,13 +16,17 @@ If you enjoy this project, [Ko-fi tips](https://ko-fi.com/caiuscodes) are option
 
 ## Install and play
 
-1. Download `Techno-Kitten-Adventure-XBLA-PC-Recomp-v1.0.3.zip` from the future [Releases](https://github.com/CaiusCodes/Techno-Kitten-Adventure-XBLA-PC-Recomp/releases) page, then extract the **whole ZIP** to a writable folder.
+1. Download `Techno-Kitten-Adventure-XBLA-PC-Recomp-v0.9.0.zip` from the [Releases](https://github.com/CaiusCodes/Techno-Kitten-Adventure-XBLA-PC-Recomp/releases) page, then extract its **Techno Kitten Adventure XBLA Recomp** folder to a writable location.
 2. Run `Setup Techno Kitten Adventure.exe` and select your legally obtained package.
-3. Choose **Install game**, then **Play now**. Later, run `Techno Kitten Adventure.exe` beside Setup.
+3. Optionally select **Extras: Unlock all levels and kittens**. Choose **Install game**, then **Play now**. Later, run `Game/Techno Kitten Adventure.exe`.
 
-Keep the `resources` folder beside Setup. After installation, the top-level play EXE launches the managed game in `Game/`. Converted assets and the .NET/MonoGame runtime live there; saves and display settings stay in `Game/userdata/`. Move or back up the complete extracted folder to keep everything together.
+The download contains only Setup, README.txt and `licenses/` inside that one folder. Setup embeds the asset-free Windows runtime and creates `Game/` beside itself. Converted assets and the .NET/MonoGame runtime live in `Game/`; saves and display settings stay in `Game/userdata/`. Move or back up the complete extracted folder to keep everything together.
 
 Setup reads your package without modifying it and does not download game data. Reinstalling from the same supported package preserves `Game/userdata/`, retains a backup of the previous installation, and migrates the older `TechnoKittenAdventure.exe` filename. Do not share an installed `Game/` folder because it contains data from your copy.
+
+### Why is the download larger than a small importer?
+
+The current v0.9.0 release ZIP is **169.6 MB (161.8 MiB)**. Setup includes the .NET 8 runtimes for the installer and game, MonoGame, and the shader conversion and compilation tools needed to prepare your supplied game locally. You do not need to install .NET separately. A small importer may rely on prerequisites already installed on your PC; this download carries its dependencies with it. The size comes from the bundled runtime and tools, not bundled game assets. Installed size is larger after extraction and conversion.
 
 ## Features
 
@@ -30,17 +34,22 @@ Setup reads your package without modifying it and does not download game data. R
 - Windowed or borderless fullscreen output at 1280×720, 1920×1080, 2560×1440 or 3840×2160. The image retains its 16:9 proportions.
 - Internal 2× rendering by default, independent of the output size. Game updates use fixed 60 Hz timing; VSync is off by default.
 - Portable saves and display settings. The Press Start screen shows the build version.
+- Controller Select/Back prompts in stage and kitten selection, and the flight instructions, appear only while a gamepad is connected.
+- Optional Setup extra raises the score-gated kitten unlocks in the local save. All five stages are already available in full mode. The previous save is retained in the reinstall backup.
 
 ### Keyboard mapping
 
 | Key | Current action |
 | --- | --- |
-| S | Start or pause |
+| Enter | Start in menus |
+| Esc | Back in menus; pause during play |
+| S | Original Start or pause shortcut |
 | Space | Select or fly |
 | B | Back or resume |
-| Arrow keys | Navigate menus |
+| Arrows or WASD | Navigate menus |
+| Mouse | Left click advances from Press Start; in menus, hover selects an item, left click acts as A, and right click acts as B |
 
-Scripted input checks exercise these mappings. Physical keyboards and controllers still need broader hardware testing; no mouse control or remapping feature is claimed.
+The cursor is visible on the title screen and in menus, including pause, and hidden during active play. The original controller and keyboard mappings remain available. Scripted checks cover installation and gameplay; physical mouse, keyboard and controller testing remains useful on more hardware.
 
 ## Known limitations
 
@@ -48,8 +57,30 @@ Scripted input checks exercise these mappings. Physical keyboards and controller
 - The game's music-spectrum visualization remains inactive. VSync and FPS-display controls are not in the native Options menu.
 - Longer sessions, physical controllers, other Windows versions and additional GPUs need testing.
 - Installer updates preserve saves transactionally, but the original game's own save writes are not crash-atomic.
+- Use a short writable installation path. Deeply nested folders can exceed Windows executable-path limits during shader conversion.
 
 If something fails, report the version, Windows version, GPU, stage and steps to reproduce. Check logs for personal paths before sharing an excerpt. Never attach a game package, converted assets or saves.
+
+## Screenshots
+
+User-supplied captures of the PC port. The underlying game artwork belongs to its respective owners and is not licensed under the port's MIT licence; see the [screenshot notice](docs/screenshots/NOTICE.md).
+
+![Main menu](docs/screenshots/main-menu.png)
+
+<details>
+<summary>Display options, adventure selection, gameplay and scores</summary>
+
+![PC display options](docs/screenshots/options.png)
+
+![Adventure selection](docs/screenshots/adventure-select.png)
+
+![Lava gameplay](docs/screenshots/lava.png)
+
+![Dream gameplay](docs/screenshots/dream.png)
+
+![Local scores](docs/screenshots/scores.png)
+
+</details>
 
 ## For developers
 

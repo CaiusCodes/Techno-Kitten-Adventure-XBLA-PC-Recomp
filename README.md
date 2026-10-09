@@ -5,6 +5,7 @@ An unofficial Windows PC port of **Techno Kitten Adventure!**, built with .NET 8
 > **You'll need your own supported Xbox 360 game package.** Setup checks your file and prepares the game on your PC. The player download contains no original game program or assets.
 
 If you'd like to support future projects, you can leave an optional [Ko-fi tip](https://ko-fi.com/caiuscodes).
+[![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/caiuscodes)
 
 ![Main menu](docs/screenshots/main-menu.png)
 

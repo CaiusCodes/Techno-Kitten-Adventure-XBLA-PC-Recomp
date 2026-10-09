@@ -1,69 +1,82 @@
 # Techno Kitten Adventure XBLA PC Recomp
 
-An unofficial .NET 8 / MonoGame PC port of the Techno Kitten Adventure! XBLA game for Windows. Supply your own Xbox 360 package: Setup retargets its managed XNA program and converts its assets on your PC. **This is not a ReXGlue or static PowerPC recompilation.** The repository contains the port, importer and build tools, not the original game program or assets.
+An unofficial Windows PC port of **Techno Kitten Adventure!**, built with .NET 8 and MonoGame. Enjoy the original XBLA game with mouse navigation, PC display options and portable saves.
 
-> **Bring your own game copy.** Setup accepts only the audited 83,353,600-byte LIVE package with header title ID `584E07D2` and SHA-256 `A472E517EF37A35A5C956C6ED558FE918F8D4E0C775995188CC17671FBB50EE5`. Other packages are rejected without replacing an installed game.
+> **You'll need your own supported Xbox 360 game package.** Setup checks your file and prepares the game on your PC. The player download contains no original game program or assets.
 
-If you enjoy this project, [Ko-fi tips](https://ko-fi.com/caiuscodes) are optional. The port and its releases remain free.
+If you'd like to support future projects, you can leave an optional [Ko-fi tip](https://ko-fi.com/caiuscodes). The port and its releases remain free.
 
-![Original neon Techno Kitten Adventure social preview](docs/social-preview.png)
+![Techno Kitten Adventure PC Port](docs/social-preview.png)
 
 ## Requirements
 
-- Windows x64 and a Direct3D 11-capable graphics card. Windows 11 has been tested; other systems need testing.
-- Your own supported Techno Kitten Adventure Xbox 360 package, identified above.
-- A writable folder for Setup and the portable game. The release carries its .NET runtime; no separate .NET installation is needed.
+- Windows x64 and a Direct3D 11-capable graphics card. Windows 11 has been tested.
+- Your own supported Techno Kitten Adventure! Xbox 360 package.
+- A short, writable folder for Setup and the game. No separate .NET installation is needed.
+
+<details>
+<summary>Which game package is supported?</summary>
+
+Setup currently accepts one verified **83,353,600-byte LIVE package**, with header title ID `584E07D2` and this SHA-256:
+
+```text
+A472E517EF37A35A5C956C6ED558FE918F8D4E0C775995188CC17671FBB50EE5
+```
+
+Other revisions, repacked packages, loose extracted files and separate DLC packages are not supported. Setup rejects unsupported files without replacing an installed game.
+
+</details>
 
 ## Install and play
 
-1. Download `Techno-Kitten-Adventure-XBLA-PC-Recomp-v0.9.0.zip` from the [Releases](https://github.com/CaiusCodes/Techno-Kitten-Adventure-XBLA-PC-Recomp/releases) page, then extract its **Techno Kitten Adventure XBLA Recomp** folder to a writable location.
-2. Run `Setup Techno Kitten Adventure.exe` and select your legally obtained package.
-3. Optionally select **Extras: Unlock all levels and kittens**. Choose **Install game**, then **Play now**. Later, run `Game/Techno Kitten Adventure.exe`.
+1. Download **`Techno-Kitten-Adventure-XBLA-PC-Recomp-v0.9.0.zip`** from [Releases](https://github.com/CaiusCodes/Techno-Kitten-Adventure-XBLA-PC-Recomp/releases).
+2. Extract the **Techno Kitten Adventure XBLA Recomp** folder to a short, writable location.
+3. Open **`Setup Techno Kitten Adventure.exe`** and choose your game package.
+4. If you'd like the score-gated kittens unlocked, tick **Unlock all levels and kittens**. Then choose **Install game**, followed by **Play now**.
 
-The download contains only Setup, README.txt and `licenses/` inside that one folder. Setup embeds the asset-free Windows runtime and creates `Game/` beside itself. Converted assets and the .NET/MonoGame runtime live in `Game/`; saves and display settings stay in `Game/userdata/`. Move or back up the complete extracted folder to keep everything together.
+Next time, launch **`Game/Techno Kitten Adventure.exe`**. All five stages are already available in full mode; the optional extra unlocks the kittens normally earned through high scores.
 
-Setup reads your package without modifying it and does not download game data. Reinstalling from the same supported package preserves `Game/userdata/`, retains a backup of the previous installation, and migrates the older `TechnoKittenAdventure.exe` filename. Do not share an installed `Game/` folder because it contains data from your copy.
+Setup leaves your original package untouched and downloads no game data. Saves and display settings stay in `Game/userdata/`. Reinstalling preserves them and keeps a backup of the previous installation. Move or back up the complete extracted folder to keep everything together. Please don't share the installed `Game/` folder, since it contains data from your copy.
 
-### Why is the download larger than a small importer?
+### Why is the download about 170 MB?
 
-The current v0.9.0 release ZIP is **169.6 MB (161.8 MiB)**. Setup includes the .NET 8 runtimes for the installer and game, MonoGame, and the shader conversion and compilation tools needed to prepare your supplied game locally. You do not need to install .NET separately. A small importer may rely on prerequisites already installed on your PC; this download carries its dependencies with it. The size comes from the bundled runtime and tools, not bundled game assets. Installed size is larger after extraction and conversion.
+The v0.9.0 ZIP is **169.6 MB (161.8 MiB)** because it includes the .NET 8 runtimes, MonoGame and the conversion tools used during setup. A small importer may rely on software already installed on your PC; this release carries its dependencies with it. The extra size comes from those tools, not game assets. Installation takes more space after extraction and conversion.
 
 ## Features
 
-- Native Windows host for the original game's menus and gameplay, with local package import.
-- Windowed or borderless fullscreen output at 1280×720, 1920×1080, 2560×1440 or 3840×2160. The image retains its 16:9 proportions.
-- Internal 2× rendering by default, independent of the output size. Game updates use fixed 60 Hz timing; VSync is off by default.
-- Portable saves and display settings. The Press Start screen shows the build version.
-- Controller Select/Back prompts in stage and kitten selection, and the flight instructions, appear only while a gamepad is connected.
-- Optional Setup extra raises the score-gated kitten unlocks in the local save. All five stages are already available in full mode. The previous save is retained in the reinstall backup.
+- Mouse navigation in menus, including clickable display options and level-select arrows.
+- Keyboard controls alongside the original gamepad controls.
+- Windowed or borderless fullscreen at 720p, 1080p, 1440p or 4K, with the original 16:9 proportions preserved.
+- 2× internal rendering by default, independent of output size; fixed 60 Hz game updates and VSync off by default.
+- Portable saves and display settings, plus a small build label on the title screen.
+- Controller Select/Back prompts and flight instructions shown only while a gamepad is connected.
 
-### Keyboard mapping
+## Controls
 
-| Key | Current action |
+| Input | Action |
 | --- | --- |
+| Arrows / WASD | Navigate menus |
+| Space | Select; hold to fly up, release to descend |
 | Enter | Start in menus |
 | Esc | Back in menus; pause during play |
-| S | Original Start or pause shortcut |
-| Space | Select or fly |
-| B | Back or resume |
-| Arrows or WASD | Navigate menus |
-| Mouse | Left click advances from Press Start; in menus, hover selects an item, left click acts as A, and right click acts as B |
+| S | Original Start / pause shortcut |
+| B | Back / resume |
+| Left click | Advance from Press Start; select in menus |
+| Right click | Back in menus |
 
-The cursor is visible on the title screen and in menus, including pause, and hidden during active play. The original controller and keyboard mappings remain available. Scripted checks cover installation and gameplay; physical mouse, keyboard and controller testing remains useful on more hardware.
+Move the mouse over menu items to highlight them. The cursor appears on the title screen and in menus, including pause, and hides during active play.
 
 ## Known limitations
 
-- Only the exact package hash above is supported. No separate DLC package has been audited or imported.
-- The game's music-spectrum visualization remains inactive. VSync and FPS-display controls are not in the native Options menu.
-- Longer sessions, physical controllers, other Windows versions and additional GPUs need testing.
-- Installer updates preserve saves transactionally, but the original game's own save writes are not crash-atomic.
-- Use a short writable installation path. Deeply nested folders can exceed Windows executable-path limits during shader conversion.
+- Only the package listed above is supported.
+- Music-spectrum visuals are inactive. VSync and FPS-display controls aren't in Options.
+- Deeply nested installation paths can stop Windows from launching the conversion tool.
+- More testing is welcome on different GPUs, Windows versions, physical controllers and longer sessions.
+- Setup preserves saves during reinstall, but the game's own save writes can still be interrupted by a crash.
 
-If something fails, report the version, Windows version, GPU, stage and steps to reproduce. Check logs for personal paths before sharing an excerpt. Never attach a game package, converted assets or saves.
+Found a problem? Please [open an issue](https://github.com/CaiusCodes/Techno-Kitten-Adventure-XBLA-PC-Recomp/issues) with your build version, Windows version, GPU, input device and the steps to reproduce it. Check `Game/logs/` for personal paths before sharing excerpts. Please don't attach game packages, converted assets or saves.
 
 ## Screenshots
-
-User-supplied captures of the PC port. The underlying game artwork belongs to its respective owners and is not licensed under the port's MIT licence; see the [screenshot notice](docs/screenshots/NOTICE.md).
 
 ![Main menu](docs/screenshots/main-menu.png)
 
@@ -86,14 +99,16 @@ User-supplied captures of the PC port. The underlying game artwork belongs to it
 
 </details>
 
+Game artwork in these captures remains the property of its owners; see the [screenshot notice](docs/screenshots/NOTICE.md).
+
 ## For developers
 
-The installer is built from `src/` and `tools/` with pinned .NET and MonoGame dependencies, CMake and Visual Studio C++ tools. [Build instructions](docs/BUILD-V1.md) list the exact tool versions and commands. `tools/Build-Installer.ps1` builds an asset-free Setup, and `tools/Package-Installer.ps1` creates the release ZIP. `VERSION` is the release version; source packages use an explicit file allowlist.
+Despite the established repository name, this is a **managed .NET / MonoGame PC port**, not a ReXGlue or static PowerPC recompilation. Setup retargets the original XNA program and converts assets locally. Its patches check the original program's hash and exact method signatures. XenosRecomp handles shader translation, not the game's CPU code.
 
-The original program is converted locally at install time. The managed IL bridges verify its full SHA-256 and exact method signatures before writing a separate game DLL. `XenosRecomp` translates shader instructions from the user's package during import; it does **not** recompile this game's CPU code. See the [technical handoff](docs/V1.md), [version-badge notes](docs/BUILD-BADGE.md) and [release notes](RELEASE_NOTES.md). Generated game-derived files belong only in private build or installed folders.
+See the [build instructions](docs/BUILD-V1.md) for pinned dependencies and commands, the [technical handoff](docs/V1.md) for implementation details, and [release notes](RELEASE_NOTES.md) for changes. `VERSION` controls release numbering. Build and packaging tools live in `tools/`; generated game files stay private.
 
 ## Licence and credits
 
-Original port code and the new cat/banner artwork are under the [MIT licence](LICENSE). The .NET runtime, MonoGame, Mono.Cecil, SharpDX, XenosRecomp and its compiler dependencies retain their own terms; see [third-party notices](THIRD_PARTY.md) and `packaging/licenses/`.
+Original port code and the new cat/banner artwork use the [MIT licence](LICENSE). .NET, MonoGame, Mono.Cecil, SharpDX, XenosRecomp and their dependencies keep their own licences; see [third-party notices](THIRD_PARTY.md).
 
-Techno Kitten Adventure!, Xbox and Xbox 360 belong to their respective owners. The MIT licence grants no rights to the original game, its assets or trademarks. This is an unofficial project with no affiliation or endorsement.
+Techno Kitten Adventure!, Xbox and Xbox 360 belong to their respective owners. The port's licence grants no rights to the original game, its assets or trademarks. This is an unofficial fan project with no affiliation or endorsement.

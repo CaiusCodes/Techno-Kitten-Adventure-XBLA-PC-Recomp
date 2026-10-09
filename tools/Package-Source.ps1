@@ -11,7 +11,7 @@ if ((Test-Path -LiteralPath $destination) -or (Test-Path -LiteralPath $zip)) { t
 $files = [Collections.Generic.List[string]]::new()
 foreach ($path in @('.gitignore','.gitattributes','VERSION','Directory.Build.props','global.json','NuGet.Config','README.md','LICENSE','THIRD_PARTY.md','RELEASE_NOTES.md',
     'docs/BUILD-V1.md','docs/V1.md','docs/DPI-VSYNC.md','docs/ICON.md','docs/INPUT-AND-SETUP-V1.1.md','docs/PUBLICATION-PREP.md','docs/RELEASE-v0.9.0.md',
-    'docs/screenshots/NOTICE.md','docs/screenshots/main-menu.png','docs/screenshots/options.png','docs/screenshots/adventure-select.png','docs/screenshots/lava.png','docs/screenshots/dream.png','docs/screenshots/scores.png',
+    'docs/screenshots/NOTICE.md','docs/screenshots/main-menu.png','docs/screenshots/options.png','docs/screenshots/adventure-select.png','docs/screenshots/lava.png','docs/screenshots/dream.png','docs/screenshots/scores.png','docs/screenshots/setup.png',
     '.github/ISSUE_TEMPLATE/bug_report.md','packaging/README.txt',
     'src/Tka.Installer/Assets/techno-kitty.svg','src/Tka.Installer/Assets/techno-kitty.ico','src/InstallerLauncher/setup-version.rc.in','tools/Build-Icon.ps1',
     'src/Tka.Host/Assets/game-kitty.svg','src/Tka.Host/Assets/game-kitty.ico','docs/BUILD-BADGE.md',
@@ -30,7 +30,7 @@ $manifest = @(foreach ($relative in $files | Sort-Object -Unique) {
     $source = Join-Path $root $relative
     if ((Get-Item -LiteralPath $source).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Source link rejected.' }
     if ($relative -notin @('src/Tka.Installer/Assets/techno-kitty.ico', 'src/Tka.Host/Assets/game-kitty.ico', 'docs/social-preview.png',
-        'docs/screenshots/main-menu.png','docs/screenshots/options.png','docs/screenshots/adventure-select.png','docs/screenshots/lava.png','docs/screenshots/dream.png','docs/screenshots/scores.png')) {
+        'docs/screenshots/main-menu.png','docs/screenshots/options.png','docs/screenshots/adventure-select.png','docs/screenshots/lava.png','docs/screenshots/dream.png','docs/screenshots/scores.png','docs/screenshots/setup.png')) {
         $content = [IO.File]::ReadAllText($source)
         if ($content.Contains([char]0) -or $content -match '(?i)C:[/\\]Users[/\\]|-----BEGIN (RSA |OPENSSH |EC )?PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9]{30,}') { throw ('Unexpected private/binary data: ' + $relative) }
     }

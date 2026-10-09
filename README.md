@@ -67,6 +67,10 @@ User-supplied captures of the PC port. The underlying game artwork belongs to it
 
 ![Main menu](docs/screenshots/main-menu.png)
 
+### Setup
+
+![Silver Explorer Setup with package picker and optional kitten unlocks](docs/screenshots/setup.png)
+
 <details>
 <summary>Display options, adventure selection, gameplay and scores</summary>
 

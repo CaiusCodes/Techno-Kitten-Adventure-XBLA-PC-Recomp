@@ -67,6 +67,10 @@ The mouse cursor is visible in menus and hidden during active gameplay. Original
 
 User-supplied captures of the PC port. Game artwork remains the property of its respective owners; screenshots are not covered by the port-code MIT licence.
 
+### Setup
+
+![Silver Explorer Setup with package picker and optional kitten unlocks](https://raw.githubusercontent.com/CaiusCodes/Techno-Kitten-Adventure-XBLA-PC-Recomp/main/docs/screenshots/setup.png)
+
 ### PC display options
 
 ![PC display options in Opshunz](https://raw.githubusercontent.com/CaiusCodes/Techno-Kitten-Adventure-XBLA-PC-Recomp/v0.9.0/docs/screenshots/options.png)

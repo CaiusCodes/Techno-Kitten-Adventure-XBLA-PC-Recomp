@@ -1,18 +1,18 @@
 # Techno Kitten Adventure XBLA PC Recomp
 
-An unofficial Windows PC port of **Techno Kitten Adventure!**, built with .NET 8 and MonoGame. Enjoy the original XBLA game with mouse navigation, PC display options and portable saves.
+An unofficial Windows PC port of **Techno Kitten Adventure!**, built with .NET 8 and MonoGame. Enjoy the original XBLA Indie game with mouse navigation, PC display options and portable saves.
 
 > **You'll need your own supported Xbox 360 game package.** Setup checks your file and prepares the game on your PC. The player download contains no original game program or assets.
 
-If you'd like to support future projects, you can leave an optional [Ko-fi tip](https://ko-fi.com/caiuscodes). The port and its releases remain free.
+If you'd like to support future projects, you can leave an optional [Ko-fi tip](https://ko-fi.com/caiuscodes).
 
-![Techno Kitten Adventure PC Port](docs/social-preview.png)
+![Main menu](docs/screenshots/main-menu.png)
 
 ## Requirements
 
 - Windows x64 and a Direct3D 11-capable graphics card. Windows 11 has been tested.
 - Your own supported Techno Kitten Adventure! Xbox 360 package.
-- A short, writable folder for Setup and the game. No separate .NET installation is needed.
+- A short writable folder for Setup and the game. No separate .NET installation is needed.
 
 <details>
 <summary>Which game package is supported?</summary>
@@ -34,7 +34,9 @@ Other revisions, repacked packages, loose extracted files and separate DLC packa
 3. Open **`Setup Techno Kitten Adventure.exe`** and choose your game package.
 4. If you'd like the score-gated kittens unlocked, tick **Unlock all levels and kittens**. Then choose **Install game**, followed by **Play now**.
 
-Next time, launch **`Game/Techno Kitten Adventure.exe`**. All five stages are already available in full mode; the optional extra unlocks the kittens normally earned through high scores.
+![Silver Explorer Setup with package picker and optional kitten unlocks](docs/screenshots/setup.png)
+
+Next launch **`Game/Techno Kitten Adventure.exe`**. All five stages are already available in full mode; the optional extra unlocks the kittens normally earned through high scores.
 
 Setup leaves your original package untouched and downloads no game data. Saves and display settings stay in `Game/userdata/`. Reinstalling preserves them and keeps a backup of the previous installation. Move or back up the complete extracted folder to keep everything together. Please don't share the installed `Game/` folder, since it contains data from your copy.
 
@@ -47,9 +49,11 @@ The v0.9.0 ZIP is **169.6 MB (161.8 MiB)** because it includes the .NET 8 runtim
 - Mouse navigation in menus, including clickable display options and level-select arrows.
 - Keyboard controls alongside the original gamepad controls.
 - Windowed or borderless fullscreen at 720p, 1080p, 1440p or 4K, with the original 16:9 proportions preserved.
-- 2× internal rendering by default, independent of output size; fixed 60 Hz game updates and VSync off by default.
+- 2x internal rendering by default, independent of output size; fixed 60 Hz game updates and VSync off by default.
 - Portable saves and display settings, plus a small build label on the title screen.
 - Controller Select/Back prompts and flight instructions shown only while a gamepad is connected.
+
+![PC display options](docs/screenshots/options.png)
 
 ## Controls
 
@@ -69,7 +73,6 @@ Move the mouse over menu items to highlight them. The cursor appears on the titl
 ## Known limitations
 
 - Only the package listed above is supported.
-- Music-spectrum visuals are inactive. VSync and FPS-display controls aren't in Options.
 - Deeply nested installation paths can stop Windows from launching the conversion tool.
 - More testing is welcome on different GPUs, Windows versions, physical controllers and longer sessions.
 - Setup preserves saves during reinstall, but the game's own save writes can still be interrupted by a crash.
@@ -77,27 +80,9 @@ Move the mouse over menu items to highlight them. The cursor appears on the titl
 Found a problem? Please [open an issue](https://github.com/CaiusCodes/Techno-Kitten-Adventure-XBLA-PC-Recomp/issues) with your build version, Windows version, GPU, input device and the steps to reproduce it. Check `Game/logs/` for personal paths before sharing excerpts. Please don't attach game packages, converted assets or saves.
 
 ## Screenshots
-
-![Main menu](docs/screenshots/main-menu.png)
-
-### Setup
-
-![Silver Explorer Setup with package picker and optional kitten unlocks](docs/screenshots/setup.png)
-
-<details>
-<summary>Display options, adventure selection, gameplay and scores</summary>
-
-![PC display options](docs/screenshots/options.png)
-
-![Adventure selection](docs/screenshots/adventure-select.png)
-
-![Lava gameplay](docs/screenshots/lava.png)
-
 ![Dream gameplay](docs/screenshots/dream.png)
-
+![Adventure selection](docs/screenshots/adventure-select.png)
 ![Local scores](docs/screenshots/scores.png)
-
-</details>
 
 Game artwork in these captures remains the property of its owners; see the [screenshot notice](docs/screenshots/NOTICE.md).
 

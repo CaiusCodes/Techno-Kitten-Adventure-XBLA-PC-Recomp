@@ -8,32 +8,24 @@ internal sealed class InstallEngine(Action<int, string> progress, Action<string>
     public string Install(string package, string destination, CancellationToken cancel, bool unlockAll = false)
     {
         var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(destination));
-        Directory.CreateDirectory(root);
-        if ((File.GetAttributes(root) & FileAttributes.ReparsePoint) != 0) throw new IOException("Choose a regular writable folder for installation.");
-        var game = Path.Combine(root, "Game");
-        var legacy = Path.Combine(root, "runtime");
-        var launcher = Path.Combine(root, "Techno Kitten Adventure.exe");
-        var oldLauncher = Path.Combine(root, "TechnoKittenAdventure.exe");
-        var launcherBytes = LauncherPayload.Read();
-        foreach (var candidate in new[] { launcher, oldLauncher }) ValidateLauncher(candidate, launcherBytes);
-        foreach (var child in new[] { game, legacy, Path.Combine(root, "backups") })
-            if (Directory.Exists(child) && (File.GetAttributes(child) & FileAttributes.ReparsePoint) != 0) throw new IOException("Installation folders must not redirect elsewhere.");
-        if (Directory.Exists(game) && Directory.Exists(legacy)) throw new IOException("Both runtime and Game folders exist. Keep the installation you want to update in this folder; move the other installation elsewhere first.");
-        var previous = Directory.Exists(game) ? game : legacy;
-        if (Directory.Exists(previous)) ValidateInstallation(previous);
-        foreach (var name in new[] { "Techno Kitten Adventure.exe", "TechnoKittenAdventure.exe" })
-        {
-            var host = Path.Combine(previous, name);
-            if (File.Exists(host)) { using var check = new FileStream(host, FileMode.Open, FileAccess.Read, FileShare.None); }
-        }
-        var staging = Path.Combine(root, ".install-" + Guid.NewGuid().ToString("N"));
+        var resources = PortableLayout.Resources(root);
+        Directory.CreateDirectory(resources);
+        if ((File.GetAttributes(root) & FileAttributes.ReparsePoint) != 0 ||
+            (File.GetAttributes(resources) & FileAttributes.ReparsePoint) != 0) throw new IOException("Use a regular writable portable folder.");
+        using var importLock = new FileStream(Path.Combine(resources,"import.lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+        var game = PortableLayout.Data(root);
+        var previous = game;
+        PortableLayout.RequireOwned(previous);
+        RuntimeManifest.Validate(root,cancel);
+        StfsPackage.Validate(package, cancel);
+        var staging = Path.Combine(resources, ".install-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(staging);
         var extracted = Path.Combine(staging, "original");
         var inspection = Path.Combine(staging, "inspection");
         var shaders = Path.Combine(staging, "shaders");
         var effects = Path.Combine(staging, "effects");
         var textures = Path.Combine(staging, "textures");
-        var ready = Path.Combine(staging, "Game");
+        var ready = Path.Combine(staging, "data");
         string? backup = null;
         var promoted = false;
         try
@@ -42,10 +34,7 @@ internal sealed class InstallEngine(Action<int, string> progress, Action<string>
             StfsPackage.Extract(package, extracted, cancel, progress);
             cancel.ThrowIfCancellationRequested();
             progress(32, "Preparing the Windows game…");
-            InstallerPayload.Extract(ready, cancel);
-            var resources = Path.Combine(ready, "resources");
-            if (!File.ReadAllBytes(Path.Combine(ready, "Techno Kitten Adventure.exe")).AsSpan().SequenceEqual(launcherBytes))
-                throw new InvalidDataException("Embedded play launcher does not match Setup.");
+            Directory.CreateDirectory(ready);
             if (AssemblyRetargeter.Run([Path.Combine(extracted, "584E07D1/Helicopter.exe"), Path.Combine(ready, "Helicopter.dll")]) != 0)
                 throw new InvalidDataException("The game program could not be converted.");
             var content = Path.Combine(extracted, "584E07D1/Content");
@@ -77,46 +66,34 @@ internal sealed class InstallEngine(Action<int, string> progress, Action<string>
                 Path.Combine(shaders, "shader-manifest.json"), Path.Combine(textures, "texture-report.json") }) File.Copy(report, Path.Combine(reports, Path.GetFileName(report)), true);
             File.WriteAllText(Path.Combine(ready, "tka-install.json"), JsonSerializer.Serialize(new {
                 title = "Techno Kitten Adventure!", package_sha256 = StfsPackage.ExpectedHash,
-                installed_utc = DateTime.UtcNow, mode = "full", format = 1
+                installed_utc = DateTime.UtcNow, mode = "full", format = 2
             }, new JsonSerializerOptions { WriteIndented = true }));
             cancel.ThrowIfCancellationRequested();
             progress(96, "Finishing installation…");
             if (Directory.Exists(previous))
             {
-                var backupRoot = Path.Combine(root, "backups"); Directory.CreateDirectory(backupRoot);
+                var backupRoot = Path.Combine(resources, "backups"); Directory.CreateDirectory(backupRoot);
+                if ((File.GetAttributes(backupRoot) & FileAttributes.ReparsePoint) != 0) throw new IOException("Backup folders must not redirect elsewhere.");
                 backup = Path.Combine(backupRoot, "Game-" + DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N")[..8]);
                 Directory.Move(previous, backup);
                 log("Previous installation retained: " + backup);
             }
             var runtimePromoted = false;
-            var launcherBackups = new List<(string Original, string Backup)>();
             try
             {
                 beforePromotion?.Invoke();
                 Directory.Move(ready, game); runtimePromoted = true;
-                // Retire only recognized top-level launchers from older layouts.
-                // Keep each original in backups and restore it on rollback.
-                foreach (var candidate in new[] { launcher, oldLauncher })
-                {
-                    ValidateLauncher(candidate, launcherBytes);
-                    if (!File.Exists(candidate)) continue;
-                    var backupRoot = Path.Combine(root, "backups"); Directory.CreateDirectory(backupRoot);
-                    var saved = Path.Combine(backupRoot, "Launcher-" + Guid.NewGuid().ToString("N") + ".exe");
-                    File.Move(candidate, saved);
-                    launcherBackups.Add((candidate, saved));
-                }
                 beforeLauncherPromotion?.Invoke();
                 promoted = true;
             }
             catch
             {
-                foreach (var item in launcherBackups.AsEnumerable().Reverse()) File.Move(item.Backup, item.Original);
                 if (runtimePromoted) Directory.Move(game, ready);
                 if (backup != null && !Directory.Exists(previous)) Directory.Move(backup, previous);
                 throw;
             }
             progress(100, "Ready to play!");
-            return Path.Combine(game, "Techno Kitten Adventure.exe");
+            return Path.Combine(root, "Techno Kitten Adventure.exe");
         }
         finally
         {
@@ -124,7 +101,7 @@ internal sealed class InstallEngine(Action<int, string> progress, Action<string>
             // Refuse recursive cleanup if a path has been redirected meanwhile.
             try
             {
-                if (Path.GetDirectoryName(Path.GetFullPath(staging)) == root &&
+                if (Path.GetDirectoryName(Path.GetFullPath(staging)) == resources &&
                     Path.GetFileName(staging).StartsWith(".install-", StringComparison.Ordinal) &&
                     Directory.Exists(staging) && !HasReparsePoint(staging)) Directory.Delete(staging, true);
                 else log("Staging retained for inspection: " + staging);
@@ -132,22 +109,6 @@ internal sealed class InstallEngine(Action<int, string> progress, Action<string>
             catch (Exception error) { log("Staging cleanup: " + error.Message); }
             if (!promoted) log("Installation was not committed; previous game and package preserved.");
         }
-    }
-
-    private static void ValidateLauncher(string file, byte[] payload)
-    {
-        if (Directory.Exists(file) || File.Exists(file) &&
-            ((File.GetAttributes(file) & FileAttributes.ReparsePoint) != 0 || !LauncherPayload.CanReplace(file, payload)))
-            throw new IOException(Path.GetFileName(file) + " already exists and does not match this setup. Extract the complete installer into a separate folder.");
-    }
-
-    private static void ValidateInstallation(string folder)
-    {
-        var marker = Path.Combine(folder, "tka-install.json");
-        if (!File.Exists(marker)) throw new IOException("The " + Path.GetFileName(folder) + " folder contains unrelated files. Move Setup to a separate folder.");
-        using var document = JsonDocument.Parse(File.ReadAllText(marker));
-        if (!document.RootElement.TryGetProperty("package_sha256", out var hash) || hash.GetString() != StfsPackage.ExpectedHash)
-            throw new IOException("The existing installation does not match this game package.");
     }
 
     private static void Command(string[] arguments)

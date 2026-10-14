@@ -12,6 +12,8 @@
 /docs/*.png
 !/docs/social-preview.png
 !/docs/RELEASE-v0.9.0.md
+!/docs/PORTABLE-LAUNCHER.md
+!/docs/SECURITY-CHECK.md
 /Game/
 /runtime/
 /resources/

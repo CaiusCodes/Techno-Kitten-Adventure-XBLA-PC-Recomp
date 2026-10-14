@@ -9,15 +9,15 @@ $destination = Join-Path $root ('out/' + $Name)
 $zip = $destination + '.zip'
 if ((Test-Path -LiteralPath $destination) -or (Test-Path -LiteralPath $zip)) { throw 'Choose a fresh source output name.' }
 $files = [Collections.Generic.List[string]]::new()
-foreach ($path in @('.gitignore','.gitattributes','VERSION','Directory.Build.props','global.json','NuGet.Config','README.md','LICENSE','THIRD_PARTY.md','RELEASE_NOTES.md',
-    'docs/BUILD-V1.md','docs/V1.md','docs/DPI-VSYNC.md','docs/ICON.md','docs/INPUT-AND-SETUP-V1.1.md','docs/PUBLICATION-PREP.md','docs/RELEASE-v0.9.0.md',
+foreach ($path in @('.gitignore','.gitattributes','VERSION','Directory.Build.props','global.json','NuGet.Config','README.md','LICENSE','THIRD_PARTY.md','RELEASE_NOTES.md','SECURITY.md',
+    'docs/BUILD-V1.md','docs/V1.md','docs/DPI-VSYNC.md','docs/ICON.md','docs/INPUT-AND-SETUP-V1.1.md','docs/PUBLICATION-PREP.md','docs/RELEASE-v0.9.0.md','docs/PORTABLE-LAUNCHER.md','docs/SECURITY-CHECK.md',
     'docs/screenshots/NOTICE.md','docs/screenshots/main-menu.png','docs/screenshots/options.png','docs/screenshots/adventure-select.png','docs/screenshots/lava.png','docs/screenshots/dream.png','docs/screenshots/scores.png','docs/screenshots/setup.png',
     '.github/ISSUE_TEMPLATE/bug_report.md','packaging/README.txt',
     'src/Tka.Installer/Assets/techno-kitty.svg','src/Tka.Installer/Assets/techno-kitty.ico','src/InstallerLauncher/setup-version.rc.in','tools/Build-Icon.ps1',
     'src/Tka.Host/Assets/game-kitty.svg','src/Tka.Host/Assets/game-kitty.ico','docs/BUILD-BADGE.md',
     'docs/social-preview.svg','docs/social-preview.png','.github/FUNDING.yml','tools/Render-SocialPreview.py',
     'tools/dotnet.ps1','tools/Build-Installer.ps1','tools/Package-Installer.ps1','tools/Package-Source.ps1','tools/Test-Publication.ps1',
-    'tools/Test-PortableInstaller.ps1','tools/Test-Installer.ps1','tools/Test-InstallerDpi.ps1','tools/Test-BuildPresentation.ps1','tools/Test-DisplayAspect.ps1','tools/Test-DisplayMenu.ps1','tools/Test-InternalScale.ps1','tools/Test-MenuMouse.ps1','tools/Test-ControllerPrompts.ps1')) { $files.Add($path) }
+    'tools/Test-PortableInstaller.ps1','tools/Test-Installer.ps1','tools/Test-InstallerDpi.ps1','tools/Test-BuildPresentation.ps1','tools/Test-DisplayAspect.ps1','tools/Test-DisplayMenu.ps1','tools/Test-InternalScale.ps1','tools/Test-MenuMouse.ps1','tools/Test-ControllerPrompts.ps1','tools/Test-SingleLauncher.ps1')) { $files.Add($path) }
 foreach ($directory in @('src','tools/Tka.AssemblyTool','tools/Tka.AssetTool','packaging/licenses')) {
     foreach ($file in Get-ChildItem -LiteralPath (Join-Path $root $directory) -Recurse -File) {
         $relative = [IO.Path]::GetRelativePath($root, $file.FullName).Replace('\','/')
@@ -54,4 +54,6 @@ try {
     }
 } finally { $archive.Dispose() }
 Write-Output ('Verified source files (no playable game data; documentation screenshots included): ' + $manifest.Count)
-Get-FileHash -LiteralPath $zip
+$sourceDigest = Get-FileHash -LiteralPath $zip
+[IO.File]::WriteAllText(($zip+'.sha256'), $sourceDigest.Hash+'  '+[IO.Path]::GetFileName($zip)+[Environment]::NewLine)
+$sourceDigest

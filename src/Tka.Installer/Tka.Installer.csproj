@@ -3,13 +3,12 @@
     <OutputType>WinExe</OutputType>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
-    <AssemblyName>Setup Techno Kitten Adventure</AssemblyName>
+    <AssemblyName>PortServices</AssemblyName>
     <ApplicationIcon>Assets/techno-kitty.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="GamePayload.cs;InstallerPayload.cs;LauncherPayload.cs" />
     <EmbeddedResource Include="../../out/techno-kitty-icon.png" LogicalName="Tka.SetupArtwork" />
-    <EmbeddedResource Include="../../out/installer-launcher-build/Release/Techno Kitten Adventure.exe" LogicalName="Tka.PlayLauncher" />
-    <EmbeddedResource Include="$(TkaPayloadArchive)" LogicalName="Tka.RuntimePayload" Condition="'$(TkaPayloadArchive)' != ''" />
     <ProjectReference Include="../../tools/Tka.AssemblyTool/Tka.AssemblyTool.csproj" />
     <ProjectReference Include="../../tools/Tka.AssetTool/Tka.AssetTool.csproj" />
   </ItemGroup>

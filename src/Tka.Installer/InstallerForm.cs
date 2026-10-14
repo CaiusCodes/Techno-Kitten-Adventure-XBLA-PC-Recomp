@@ -5,9 +5,10 @@ namespace Tka.Installer;
 
 internal sealed class InstallerForm : Form
 {
-    internal static OpenFileDialog CreatePackagePicker() => new() {
-        Title = "Select your Techno Kitten Adventure package", Filter = "Xbox 360 package|*.*", CheckFileExists = true,
-        InitialDirectory = Path.GetDirectoryName(Application.ExecutablePath), RestoreDirectory = true };
+    internal static OpenFileDialog CreatePackagePicker(string? root = null) => new() {
+        Title = "Choose a package, or open its folder and choose Open", Filter = "Xbox 360 package|*.*", FileName = "Use this folder", CheckFileExists = false, ValidateNames = false,
+        InitialDirectory = root ?? Path.GetDirectoryName(Application.ExecutablePath), RestoreDirectory = true };
+    internal static string ResolvePickerPath(string path) => !File.Exists(path) && Path.GetFileName(path) == "Use this folder" ? Path.GetDirectoryName(path)! : path;
     private static readonly Color Pink = Color.FromArgb(255, 123, 167);
     private static readonly Color Cyan = Color.FromArgb(86, 234, 243);
     private readonly TextBox package = new();
@@ -17,7 +18,16 @@ internal sealed class InstallerForm : Form
     private readonly Label status;
     private readonly Label percent;
     private readonly Panel progressFill;
-    private readonly CheckBox unlockAll = new();
+    private readonly CheckBox fullscreen = new();
+    private readonly CheckBox desktopShortcut = new();
+    private readonly ComboBox choices = new();
+    private bool discovering;
+    private sealed record PackageChoice(string FullPath)
+    {
+        public override string ToString() => Path.GetFileName(FullPath)+" — "+Path.GetDirectoryName(FullPath);
+    }
+    private Task? droppedInput;
+    private string[]? playProbeArguments;
     private readonly Bitmap setupArtwork = LoadSetupArtwork();
     private readonly string root;
     private readonly Action<string> log;
@@ -33,7 +43,7 @@ internal sealed class InstallerForm : Form
     {
         SuspendLayout();
         root = distributionRoot; log = write;
-        Text = "Setup";
+        Text = "Techno Kitten Adventure";
         Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         // This code-drawn form has one explicit 96-DPI coordinate system for
         // backgrounds, controls and fonts. Do not mix WinForms autoscaling with it.
@@ -48,20 +58,35 @@ internal sealed class InstallerForm : Form
         LabelAt("Select your legally obtained\nXbox 360 game package.", 301, 87, 470, 52, Color.FromArgb(174, 190, 211), 11.25f);
         ConfigurePath(package, 318, 168, "No package selected");
         package.Text = "No package selected";
-        browsePackage = ButtonAt("Choose file…", 300, 222, 472, 44, true, Cyan);
+        browsePackage = ButtonAt("Browse Package", 300, 222, 472, 44, true, Cyan);
         browsePackage.BackColor = BackColor;
-        browsePackage.Click += (_, _) =>
+        browsePackage.Click += async (_, _) =>
         {
-            using var picker = CreatePackagePicker();
-            if (picker.ShowDialog(this) == DialogResult.OK) package.Text = picker.FileName;
+            using var picker = CreatePackagePicker(root);
+            if (picker.ShowDialog(this) == DialogResult.OK) await ChooseInputAsync(ResolvePickerPath(picker.FileName));
         };
-        LabelAt("After setup, play from\nGame\\Techno Kitten Adventure.exe.\nAssets and saves stay in Game.", 301, 295, 470, 76, Color.FromArgb(174, 190, 211), 10.5f);
-        unlockAll.Text = "Unlock all levels and kittens";
-        unlockAll.Location = new Point(316, 397); unlockAll.Size = new Size(450, 27);
-        unlockAll.ForeColor = Color.White; unlockAll.BackColor = Color.Transparent;
-        unlockAll.Font = new Font("Consolas", 10.5f); unlockAll.Cursor = Cursors.Hand;
-        Controls.Add(unlockAll);
-        LabelAt("Optional extra: unlock score-gated kittens.", 316, 428, 450, 24, Color.FromArgb(174, 190, 211), 9.75f);
+        LabelAt("After setup, open Techno Kitten Adventure.exe.\nAssets and saves stay in resources.", 301, 295, 470, 76, Color.FromArgb(174, 190, 211), 10.5f);
+        foreach (var (control,text,y) in new[] { (fullscreen,"Start in fullscreen",397), (desktopShortcut,"Create desktop shortcut",428) })
+        {
+            control.Text = text; control.Location = new Point(316,y); control.Size = new Size(450,27);
+            control.ForeColor = Color.White; control.BackColor = Color.Transparent;
+            control.Font = new Font("Consolas",10.5f); control.Cursor = Cursors.Hand;
+            Controls.Add(control);
+        }
+        choices.Location = package.Location; choices.Size = package.Size; choices.Font = package.Font;
+        choices.DropDownStyle = ComboBoxStyle.DropDownList; choices.Visible = false; Controls.Add(choices);
+        choices.SelectedIndexChanged += async (_, _) =>
+        {
+            if (!discovering && choices.SelectedItem is PackageChoice selected) { choices.Visible = false; package.Visible = true; package.Text = selected.FullPath; await InstallAsync(); }
+        };
+        AllowDrop = true; package.AllowDrop = true;
+        DragEventHandler dragging = (_,e) => e.Effect = cancellation == null && gameExecutable == null && !discovering && e.Data?.GetDataPresent(DataFormats.FileDrop) == true ? DragDropEffects.Copy : DragDropEffects.None;
+        DragEventHandler dropping = async (_,e) =>
+        {
+            if (cancellation == null && gameExecutable == null && !discovering && e.Data?.GetData(DataFormats.FileDrop) is string[] files && files.Length == 1)
+                await (droppedInput = ChooseInputAsync(files[0]));
+        };
+        DragEnter += dragging; DragDrop += dropping; package.DragEnter += dragging; package.DragDrop += dropping;
         status = LabelAt("Choose a package to get started.", 301, 475, 410, 39, Color.FromArgb(174, 190, 211), 10.5f);
         percent = LabelAt("0%", 712, 485, 60, 27, Cyan, 11, FontStyle.Bold);
         percent.TextAlign = ContentAlignment.TopRight;
@@ -71,13 +96,14 @@ internal sealed class InstallerForm : Form
         LabelAt("Your package stays untouched.\nNo game assets included.", 301, 550, 226, 42, Color.FromArgb(174, 190, 211), 8.25f);
         cancel = ButtonAt("Close", 534, 544, 84, 44, false);
         cancel.Click += (_, _) => { if (cancellation != null) { cancellation.Cancel(); status.Text = "Cancelling safely…"; } else Close(); };
-        install = ButtonAt("Install game", 633, 544, 139, 44, true);
+        install = ButtonAt("Import game", 633, 544, 139, 44, true);
         install.Enabled = false;
-        package.TextChanged += (_, _) => { install.Enabled = File.Exists(package.Text) && cancellation == null; status.Text = "Ready to install."; };
+        package.TextChanged += (_, _) => { if (gameExecutable == null && cancellation == null) install.Enabled = File.Exists(package.Text); };
         AcceptButton = install;
         install.Click += async (_, _) => await InstallAsync();
         FormClosing += (_, e) =>
         {
+            if (discovering) { e.Cancel = true; return; }
             if (cancellation != null) { e.Cancel = true; cancellation.Cancel(); status.Text = "Cancelling safely…"; }
         };
         CaptureLayout(this);
@@ -156,39 +182,131 @@ internal sealed class InstallerForm : Form
         log($"DPI preview passed: {dpi}; client {ClientSize.Width}x{ClientSize.Height}; controls {logicalLayout.Count}.");
     }
 
+    internal bool IsReady => gameExecutable != null;
+    internal bool BrowseEnabled => browsePackage.Enabled;
+    internal bool PlayEnabled => install.Enabled && gameExecutable != null;
+    internal bool ExtrasUnchecked => !fullscreen.Checked && !desktopShortcut.Checked;
+    internal int ChoiceCount => choices.Items.Count;
+    internal void TestPlay()
+    {
+        if (!IsReady || !PlayEnabled) throw new InvalidDataException("Play isn't ready.");
+        fullscreen.Checked = true;
+        var data = PortableLayout.Data(root);
+        playProbeArguments = [Path.Combine(data,"Helicopter.dll"),Path.Combine(data,"Content"),"6","--fixed60","--scripted"];
+        install.PerformClick();
+    }
+    internal async Task TestDropAsync(string path)
+    {
+        var data = new DataObject(DataFormats.FileDrop,new[] { path });
+        var enter = new DragEventArgs(data,0,0,0,DragDropEffects.Copy,DragDropEffects.None);
+        OnDragEnter(enter);
+        if (enter.Effect != DragDropEffects.Copy) throw new InvalidDataException("Drop acceptance failed.");
+        OnDragDrop(enter);
+        if (droppedInput is null) throw new InvalidDataException("Drop handler wasn't invoked.");
+        await droppedInput;
+    }
+
+    internal async Task DiscoverAsync()
+    {
+        if (cancellation != null) return;
+        discovering = true; browsePackage.Enabled = false; status.Text = "Checking nearby packages…";
+        try
+        {
+            await Task.Run(() => PortableLayout.Migrate(root,log));
+            if (PortableLayout.Ready(root)) { Ready(); return; }
+            var found = await Task.Run(() => PackageDiscovery.Nearby(root,CancellationToken.None));
+            discovering = false;
+            await OfferAsync(found);
+        }
+        catch (Exception error) { log(error.ToString()); status.Text = "Choose or drop your supported package."; }
+        finally { discovering = false; browsePackage.Enabled = !IsReady && cancellation == null; }
+    }
+
+    internal async Task ChooseInputAsync(string source)
+    {
+        if (cancellation != null || IsReady || discovering) return;
+        discovering = true; browsePackage.Enabled = false; status.Text = "Checking your package…";
+        try
+        {
+            var found = await Task.Run(() => PackageDiscovery.FromInput(source,CancellationToken.None));
+            discovering = false;
+            await OfferAsync(found);
+        }
+        catch (Exception error)
+        {
+            log(error.ToString()); status.Text = error.Message;
+            MessageBox.Show(this,error.Message,"Choose a supported package",MessageBoxButtons.OK,MessageBoxIcon.Information);
+        }
+        finally { discovering = false; browsePackage.Enabled = !IsReady && cancellation == null; }
+    }
+
+    private async Task OfferAsync(List<string> found)
+    {
+        if (found.Count == 1) { choices.Visible = false; package.Visible = true; package.Text = found[0]; await InstallAsync(); }
+        else if (found.Count > 1)
+        {
+            discovering = true; choices.Items.Clear(); choices.Items.AddRange(found.Select(path => new PackageChoice(path)).ToArray()); choices.SelectedIndex = -1;
+            choices.Visible = true; package.Visible = false; discovering = false;
+            status.Text = "More than one package found. Choose one above.";
+        }
+        else status.Text = "Browse or drop your supported package here.";
+    }
+
+    private void Ready()
+    {
+        gameExecutable = Path.Combine(root,"Techno Kitten Adventure.exe");
+        browsePackage.Enabled = false; choices.Visible = false; package.Visible = true;
+        package.Text = "Your game is ready"; install.Text = "Play"; install.Enabled = true;
+        status.Text = "Ready to play. Choose Play when you're ready."; percent.Text = "100%"; progressValue = 100;
+        progressFill.Width = progressFill.Parent!.ClientSize.Width;
+        fullscreen.Enabled = true; desktopShortcut.Enabled = true;
+    }
+
     private async Task InstallAsync()
     {
         if (gameExecutable != null)
         {
-            Process.Start(new ProcessStartInfo(gameExecutable) { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(gameExecutable)! });
-            Close(); return;
+            try
+            {
+                if (desktopShortcut.Checked)
+                {
+                    var path = PlayExtras.ShortcutPath;
+                    if (File.Exists(path))
+                        MessageBox.Show(this,"A desktop shortcut already exists. It has been left unchanged.","Desktop shortcut",MessageBoxButtons.OK,MessageBoxIcon.Information);
+                    else PlayExtras.CreateShortcut(root,path);
+                }
+                if (fullscreen.Checked) PlayExtras.ApplyFullscreen(root);
+                using var game = PortableLayout.StartGame(root,playProbeArguments);
+                Close();
+            }
+            catch (Exception error) { log(error.ToString()); MessageBox.Show(this,error.Message,"Could not start",MessageBoxButtons.OK,MessageBoxIcon.Error); }
+            return;
         }
-        if (!File.Exists(package.Text)) { MessageBox.Show(this, "Select your game package first.", "Choose a package", MessageBoxButtons.OK, MessageBoxIcon.Information); return; }
+        if (!File.Exists(package.Text)) return;
         var source = package.Text;
         cancellation = new CancellationTokenSource();
-        install.Enabled = false; browsePackage.Enabled = false; unlockAll.Enabled = false; cancel.Text = "Cancel";
-        var progress = new Progress<(int value, string text)>(p => { progressValue = p.value; progressFill.Width = p.value * progressFill.Parent!.ClientSize.Width / 100; percent.Text = p.value + "%"; status.Text = p.text; });
+        install.Enabled = false; browsePackage.Enabled = false; choices.Enabled = false;
+        fullscreen.Enabled = false; desktopShortcut.Enabled = false; cancel.Text = "Cancel";
+        var progress = new Progress<(int value,string text)>(p => { progressValue = p.value; progressFill.Width = p.value * progressFill.Parent!.ClientSize.Width / 100; percent.Text = p.value+"%"; status.Text = p.text; });
         try
         {
-            gameExecutable = await Task.Run(() => new InstallEngine(
-                (value, message) => { log($"{value}% {message}"); ((IProgress<(int, string)>)progress).Report((value, message)); }, log)
-                .Install(source, root, cancellation.Token, unlockAll.Checked));
-            install.Text = "Play now";
-            status.Text = "Installed. Ready to play!";
+            await Task.Run(() => new InstallEngine((value,message) => { log($"{value}% {message}"); ((IProgress<(int,string)>)progress).Report((value,message)); },log)
+                .Install(source,root,cancellation.Token));
+            Ready(); // Deliberately stay open: only Play launches the game.
         }
-        catch (OperationCanceledException) { status.Text = "Cancelled. Your previous game and package are safe."; }
+        catch (OperationCanceledException) { status.Text = "Cancelled. Your game, saves and package are safe."; }
         catch (Exception error)
         {
-            log(error.ToString()); status.Text = "Installation could not finish. See the logs folder for details.";
-            MessageBox.Show(this, error.Message, "Installation stopped", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            log(error.ToString()); status.Text = "Import stopped. See resources/logs for details.";
+            MessageBox.Show(this,error.Message,"Import stopped",MessageBoxButtons.OK,MessageBoxIcon.Error);
         }
         finally
         {
             cancellation.Dispose(); cancellation = null;
-            install.Enabled = true; browsePackage.Enabled = gameExecutable == null; unlockAll.Enabled = gameExecutable == null; cancel.Text = "Close";
+            install.Enabled = IsReady || File.Exists(package.Text); browsePackage.Enabled = !IsReady; choices.Enabled = true;
+            fullscreen.Enabled = true; desktopShortcut.Enabled = true; cancel.Text = "Close";
         }
     }
-
     private Label LabelAt(string text, int x, int y, int width, int height, Color color, float size, FontStyle style = FontStyle.Regular)
     {
         var label = new Label { Text = text, Location = new Point(x, y), Size = new Size(width, height), ForeColor = color, BackColor = Color.Transparent, Font = new Font("Consolas", size, style) };
@@ -306,8 +424,8 @@ internal sealed class InstallerForm : Form
         package.Text = "Techno Kitten Adventure package";
         browsePackage.Enabled = false;
         cancel.Text = "Cancel"; cancel.Refresh(); cancel.Text = "Close";
-        install.Enabled = true; install.Text = "Play now";
-        status.Text = "Installed. Ready to play!"; percent.Text = "100%";
+        install.Enabled = true; install.Text = "Play";
+        status.Text = "Ready to play. Choose Play when you're ready."; percent.Text = "100%";
         progressValue = 100;
         progressFill.Width = progressFill.Parent!.ClientSize.Width;
         cancel.Focus();

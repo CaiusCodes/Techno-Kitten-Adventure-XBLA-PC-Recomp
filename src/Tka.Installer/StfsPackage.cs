@@ -10,6 +10,18 @@ internal static class StfsPackage
     public const string ExpectedHash = "A472E517EF37A35A5C956C6ED558FE918F8D4E0C775995188CC17671FBB50EE5";
     private sealed record Entry(int Index, string Name, bool Directory, bool Consecutive, int Blocks, int Block, int Parent, int Size);
 
+    public static void Validate(string path, CancellationToken cancel)
+    {
+        using var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        if (file.Length != 83353600) throw new InvalidDataException("This package version is not supported. Choose your original supported Xbox 360 package.");
+        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        var buffer = new byte[131072];
+        int count;
+        while ((count = file.Read(buffer)) != 0) { cancel.ThrowIfCancellationRequested(); hash.AppendData(buffer, 0, count); }
+        if (Convert.ToHexString(hash.GetHashAndReset()) != ExpectedHash)
+            throw new InvalidDataException("This package is unsupported or damaged. Your file has not been changed.");
+    }
+
     // Deliberately version-specific. A differently packaged release must be
     // audited before acceptance, even if its display title happens to match.
     public static void Extract(string packagePath, string output, CancellationToken cancel, Action<int, string> progress)

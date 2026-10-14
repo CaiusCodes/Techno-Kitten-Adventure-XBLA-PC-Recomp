@@ -1,11 +1,13 @@
-First public release of the unofficial .NET 8 / MonoGame Windows PC port.
+Portable single-launcher update, version **0.9.0**.
 
-**[Download the game installer — v0.9.0](https://github.com/CaiusCodes/Techno-Kitten-Adventure-XBLA-PC-Recomp/releases/download/v0.9.0/Techno-Kitten-Adventure-XBLA-PC-Recomp-v0.9.0.zip)**
+**[Download Techno Kitten Adventure for Windows](https://github.com/CaiusCodes/Techno-Kitten-Adventure-XBLA-PC-Recomp/releases/download/v0.9.0/Techno-Kitten-Adventure-portable-v0.9.0.zip)**
 
-You'll need your own supported Xbox 360 game package. No original game program or assets are included.
+First play: extract, open **Techno Kitten Adventure.exe**, import your supported Xbox 360 package, then click **Play**. Future launches start the game immediately. No original game program or assets are included.
 
-The download is **169.6 MB** because it includes the .NET 8 runtimes, MonoGame and setup conversion tools. No separate .NET installation is needed.
+The ZIP is about **167.2 MB** because it includes .NET 8, MonoGame and conversion tools. No separate .NET installation is needed.
 
-See the **[README](https://github.com/CaiusCodes/Techno-Kitten-Adventure-XBLA-PC-Recomp#readme)** for installation, controls, screenshots and known limitations.
+Microsoft Defender found no threats on 14 October 2026. The launcher is unsigned; SmartScreen or other antivirus products may still warn. [Scan details](https://github.com/CaiusCodes/Techno-Kitten-Adventure-XBLA-PC-Recomp/blob/main/docs/SECURITY-CHECK.md).
 
-The source archives are for developers; players only need the installer ZIP linked above. The `.sha256` files are download checksums.
+See the **[README](https://github.com/CaiusCodes/Techno-Kitten-Adventure-XBLA-PC-Recomp#readme)** for instructions and screenshots. Files labelled legacy use the older Setup/Game layout.
+
+Developers: the attached source ZIP matches the portable update. The original v0.9.0 tag and GitHub's automatic source archives remain the original release snapshot. `.sha256` files are download checksums.

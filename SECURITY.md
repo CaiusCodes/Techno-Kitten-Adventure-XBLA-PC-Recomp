@@ -1,21 +1,15 @@
-# Security Policy
+# Security policy
 
-## Supported Versions
+The current **v0.9.0** portable release receives fixes on a best-effort basis. Third-party components retain their own security support policies.
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+## Report a vulnerability
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+Use this repository's **Security → Report a vulnerability** option to report a security issue privately. Include the build version, affected file, steps to reproduce and the likely impact. Please don't include game packages, imported assets, saves, credentials or unnecessary personal information.
 
-## Reporting a Vulnerability
+For ordinary gameplay bugs or antivirus detections, use [Issues](https://github.com/CaiusCodes/Techno-Kitten-Adventure-XBLA-PC-Recomp/issues). For a detection, include the antivirus vendor, detection name and file SHA-256. Keep protection enabled while the report is investigated.
 
-Use this section to tell people how to report a vulnerability.
+There is no guaranteed response time. Please allow the maintainer to investigate before publishing exploit details.
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+## Release checks
+
+The portable release is checked for appropriate contents and scanned locally with Microsoft Defender. Results and limitations are recorded in [the security check](docs/SECURITY-CHECK.md). A clean scan is not a guarantee that every antivirus product will accept a build. The launcher is currently unsigned.

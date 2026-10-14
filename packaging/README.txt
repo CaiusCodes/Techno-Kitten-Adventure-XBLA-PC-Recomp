@@ -1,75 +1,81 @@
 TECHNO KITTEN ADVENTURE! — PC V0.9.0
 
-Free and open source. New port code is MIT-licensed; you may use, modify
-and redistribute it, including commercially, while retaining the required
-notices. See licenses/Port-Code.txt and the other third-party license files.
-No rights to the original game or its assets are granted by this license.
+A free, unofficial .NET 8 / MonoGame Windows PC port.
+You'll need your own supported Xbox 360 game package. No original game
+program or assets are included. No separate .NET installation is needed.
 
-Extract the "Techno Kitten Adventure XBLA Recomp" folder from the ZIP to a
-writable location where you want the game, then open "Setup Techno Kitten
-Adventure.exe". No developer tools or separate .NET installation are required.
+FIRST PLAY
+1. Extract the complete Techno Kitten Adventure folder to a short, writable
+   location. Keep Techno Kitten Adventure.exe beside resources.
+2. Open Techno Kitten Adventure.exe.
+3. Setup looks only beside the launcher and in Game Package/ (up to four
+   nested folders). One compatible package is imported automatically.
+   If several are found, choose one. Otherwise use Browse Package, or drag
+   your original package or its containing folder onto the setup window.
+4. Wait for Ready to play, then click Play. Import never launches the game.
 
-Choose your legally obtained Xbox 360 Techno Kitten Adventure package.
-The play EXE and asset-free Windows runtime are embedded in Setup. After
-installation, the play EXE is in Game beside resources and the release manifest.
-Saves/settings stay in Game\userdata. No location picker is needed.
-Setup extracts your files, converts the original
-graphics, fonts and shaders, and prepares the Windows game automatically.
-Your original package is opened read-only and never changed.
+Optional Extras, unchecked by default:
+- Start in fullscreen: applied when Play is clicked; other settings are kept.
+- Create desktop shortcut: targets the root launcher. An existing shortcut
+  is left unchanged. Recreate it if you later move the portable folder.
 
-Click Play now when setup finishes. Later, open:
-  Game\Techno Kitten Adventure.exe
+NEXT PLAY
+Open the same Techno Kitten Adventure.exe. The game starts immediately.
+The package is no longer needed. To reopen setup, run the launcher with
+--setup (for example from a shortcut's arguments).
 
-SETUP EXTRAS
-  The optional "Unlock all levels and kittens" checkbox raises the game's
-  five score-gated kitten unlock values in the portable save. All five stages
-  are already available in full mode. On reinstall, the old save is kept in
-  the previous-install backup.
+PORTABLE FILES
+resources/game/        internal game runtime
+resources/setup/       internal setup and conversion service runtime
+resources/compiler/    shader compiler
+resources/translator/  shader translator and its required adjacent DLLs
+resources/data/        imported game assembly, Content and installation marker
+resources/data/userdata/  saves, settings and caches
+resources/data/logs/   game logs
+resources/logs/        import/setup logs
+resources/backups/     previous imported data retained after reimport
+resources/release-manifest.json  redistributed runtime hashes
 
-Normal PC play uses full mode. The trial setting is only available as an
-explicit developer regression-test option.
+Keep the whole folder together when moving or backing it up. There is no
+administrator or registry installation. Don't share resources/data: it
+contains converted material from your own game copy.
 
-KEYBOARD
-  Enter   Start in menus
-  Esc     Back in menus / pause during play
-  S       Original Start / pause shortcut
-  Space   Select / start flying / hold to rise
-  B       Back / resume
-  Arrows or WASD  Move through menus
-  Mouse   Left click advances from Press Start. In menus, hover selects an
-          item; left click = A; right click = B. The cursor appears in menus
-          and hides during active play.
+If essential imported files are missing, setup opens again. Reimport keeps
+saves/settings and retains the old data as a backup. If runtime software is
+missing, extract the complete download again while keeping resources/data.
+Valid older Game/ or runtime/ installations beside the launcher can be copied
+into resources/data without a package. Their original folders are retained.
+Older score-gated kitten unlocks in your save are preserved.
 
-DISPLAY OPTIONS
-  VSync is off by default and remains off after display changes.
-  Game timing remains 60 updates per second.
-  The game renders internally at 2560x1440 (2x) by default, independently
-  of the chosen window size. First launch opens a 1280x720 window.
-  Existing saved window/fullscreen choices take priority.
-  In Options, choose DISPLAY or RESOLUTION and press Left/Right (or select).
-  DISPLAY switches between Windowed and borderless Fullscreen.
-  RESOLUTION cycles 1280x720, 1920x1080, 2560x1440 and 3840x2160.
-  These options control the output size; internal scale stays at 2x.
-  In fullscreen the rendered image is fitted to your desktop;
-  the original game layout stays 16:9, with side bars on wider monitors.
-  Oversized windows also preserve 16:9 when Windows constrains their size.
-  Changes apply immediately and save to Game/userdata/settings/display.json.
+SUPPORTED PACKAGE
+Only the previously supported 83,353,600-byte LIVE package is accepted.
+Header title ID: 584E07D2
+SHA-256:
+A472E517EF37A35A5C956C6ED558FE918F8D4E0C775995188CC17671FBB50EE5
+Other revisions, repacked or loose files, and separate DLC are unsupported.
+Your source package is read-only and is never moved, changed or deleted.
+All existing content packs in this supported package are retained.
 
-Saves are inside Game\userdata. Keep the complete Setup folder, including
-Game, when moving or backing up the game. Reinstalling
-preserves userdata and keeps the previous installation under backups. Older runtime
-installations are migrated automatically; saves move with them.
+CONTROLS
+Arrows / WASD: menu navigation. Space: select / hold to rise, release to fall.
+Enter: Start in menus. Esc: Back in menus / pause during gameplay.
+S: original Start / pause shortcut. B: Back / resume.
+Mouse: hover menus, left click selects (and advances from Press Start),
+right click goes back. Cursor is hidden during active play.
+Original gamepad controls are preserved.
 
-V0.9.0 TEST COVERAGE AND LIMITATIONS
-First-stage gameplay and original menus have been tested. Display mode and
-resolution are integrated into Options. Music spectrum visuals, VSync/FPS
-physical controls and complete stage/controller testing remain in progress.
-No separate DLC package is currently supported.
+DISPLAY
+Windowed/borderless fullscreen and 720p/1080p/1440p/4K output retain 16:9.
+Internal rendering remains 2x, independent of output size. VSync is off;
+game updates use fixed 60 Hz. Existing settings take priority unless you
+select Start in fullscreen and click Play.
 
-This download contains no original game program, artwork, music or DLC.
-Only the audited package version is accepted; a different or corrupt file
-is rejected without replacing an existing installation.
+LICENCES
+Original port code and project-owned artwork are MIT-licensed; see
+licenses/Port-Code.txt. Other components retain their notices in licenses/.
+No rights to the original game, its artwork, music or trademarks are granted.
+This is an unofficial project, with no affiliation or endorsement.
 
-If setup fails, keep the newest file from the logs folder.
-License notices are in licenses. Installed game assets must not be included
-when sharing the installer download with other people.
+This is the portable single-launcher v0.9.0 update. Use short installation
+paths. Broader hardware, physical DPI
+transitions and long sessions still need testing.

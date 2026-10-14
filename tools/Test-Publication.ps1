@@ -30,10 +30,13 @@ try {
     } finally { $source.Dispose() }
     $release = [IO.Compression.ZipFile]::OpenRead([IO.Path]::GetFullPath($ReleaseZip))
     try {
+        $portable = $null -ne $release.GetEntry('Techno Kitten Adventure/Techno Kitten Adventure.exe')
+        $releaseRoot = if ($portable) { 'Techno Kitten Adventure/' } else { 'Techno Kitten Adventure XBLA Recomp/' }
         foreach ($entry in $release.Entries) {
-            if ($entry.FullName -notmatch '^Techno Kitten Adventure XBLA Recomp/(Setup Techno Kitten Adventure\.exe|README\.txt|licenses/[^/]+)$') { $findings.Add('Unexpected release entry: '+$entry.FullName) }
+            $pattern = if ($portable) { '^Techno Kitten Adventure/(Techno Kitten Adventure\.exe|README\.txt|licenses/[^/]+|resources/(game|setup|compiler|translator)/.+|resources/release-manifest\.json)$' } else { '^Techno Kitten Adventure XBLA Recomp/(Setup Techno Kitten Adventure\.exe|README\.txt|licenses/[^/]+)$' }
+            if ($entry.FullName -notmatch $pattern -or $entry.FullName -match '(?i)\.(xnb|wma|xwb|xsb|xgs|xex|live|stfs|pirs|con|xenos|mgfxo|pdb|log|zip)$|(^|/)(Helicopter\.(exe|dll)|GameInfo\.(xml|bin)|ScoreInfo)$') { $findings.Add('Unexpected release entry: '+$entry.FullName) }
         }
-        $notice = $release.GetEntry('Techno Kitten Adventure XBLA Recomp/README.txt')
+        $notice = $release.GetEntry($releaseRoot+'README.txt')
         if (!$notice) { throw 'Missing release README.' }
         $reader = [IO.StreamReader]::new($notice.Open())
         try { if (!$reader.ReadToEnd().Contains('PC V'+$version)) { $findings.Add('Release README version mismatch.') } } finally { $reader.Dispose() }

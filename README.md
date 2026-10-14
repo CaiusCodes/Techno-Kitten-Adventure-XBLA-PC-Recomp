@@ -14,7 +14,7 @@ If you'd like to support future projects, you can leave an optional [Ko-fi tip](
 
 - Windows x64 and a Direct3D 11-capable graphics card. Windows 11 has been tested.
 - Your own supported Techno Kitten Adventure! Xbox 360 package.
-- A short writable folder for Setup and the game. No separate .NET installation is needed.
+- A short writable folder for the portable game. No separate .NET installation is needed.
 
 <details>
 <summary>Which game package is supported?</summary>
@@ -31,21 +31,22 @@ Other revisions, repacked packages, loose extracted files and separate DLC packa
 
 ## Install and play
 
-1. Download **`Techno-Kitten-Adventure-XBLA-PC-Recomp-v0.9.0.zip`** from [Releases](https://github.com/CaiusCodes/Techno-Kitten-Adventure-XBLA-PC-Recomp/releases).
-2. Extract the **Techno Kitten Adventure XBLA Recomp** folder to a short, writable location.
-3. Open **`Setup Techno Kitten Adventure.exe`** and choose your game package.
-4. If you'd like the score-gated kittens unlocked, tick **Unlock all levels and kittens**. Then choose **Install game**, followed by **Play now**.
+Download **[Techno-Kitten-Adventure-portable-v0.9.0.zip](https://github.com/CaiusCodes/Techno-Kitten-Adventure-XBLA-PC-Recomp/releases/download/v0.9.0/Techno-Kitten-Adventure-portable-v0.9.0.zip)** from Releases. This is the current single-launcher download; files labelled legacy use the previous Setup/Game layout.
 
-![Silver Explorer Setup with package picker and optional kitten unlocks](docs/screenshots/setup.png)
+1. Extract the complete **Techno Kitten Adventure** folder to a short, writable location.
+2. Open **Techno Kitten Adventure.exe**. Put your package beside it or in **Game Package/** and setup will find it. One compatible package imports automatically; if several are found, choose one.
+3. Otherwise, use **Browse Package**, or drop your package or its containing folder onto the window.
+4. When setup says **Ready to play**, choose **Play**. Importing never launches the game automatically.
 
-Next launch **`Game/Techno Kitten Adventure.exe`**. All five stages are already available in full mode; the optional extra unlocks the kittens normally earned through high scores.
+The optional **Start in fullscreen** and **Create desktop shortcut** boxes are unchecked by default and take effect when you click Play. Existing settings and shortcuts are preserved.
 
-Setup leaves your original package untouched and downloads no game data. Saves and display settings stay in `Game/userdata/`. Reinstalling preserves them and keeps a backup of the previous installation. Move or back up the complete extracted folder to keep everything together. Please don't share the installed `Game/` folder, since it contains data from your copy.
+Next time, open the same **Techno Kitten Adventure.exe** and the game starts straight away. The original package is no longer needed. Use `--setup` to reopen the setup window manually.
 
-### Why is the download about 170 MB?
+Runtime files and imported data stay inside `resources/`; saves and display settings live in `resources/data/userdata/`. Move or back up the whole folder to keep everything together. Setup never changes your package. Reimport preserves your saves and keeps previous imported data as a backup. Recognised older `Game/` or `runtime/` installations can be copied across automatically while retaining their originals. Please don't share `resources/data/`, since it contains material from your game copy.
 
-The v0.9.0 ZIP is **169.6 MB (161.8 MiB)** because it includes the .NET 8 runtimes, MonoGame and the conversion tools used during setup. A small importer may rely on software already installed on your PC; this release carries its dependencies with it. The extra size comes from those tools, not game assets. Installation takes more space after extraction and conversion.
+### Why is the download larger than a small importer?
 
+The portable download includes the .NET 8 runtimes, MonoGame and setup conversion tools as ordinary files under `resources/`. No separate .NET installation is needed. A small importer may rely on prerequisites already installed on the PC; this release carries them with it. The ZIP contains no game assets. See the [portable launcher notes](docs/PORTABLE-LAUNCHER.md) for the layout, build commands and test coverage.
 ## Features
 
 - Mouse navigation in menus, including clickable display options and level-select arrows.
@@ -74,12 +75,14 @@ Move the mouse over menu items to highlight them. The cursor appears on the titl
 
 ## Known limitations
 
+Microsoft Defender found no threats in the release folder and ZIP on 14 October 2026. The launcher is unsigned, so Windows may still show a SmartScreen warning. One scan cannot guarantee acceptance by every antivirus; see the [scan details](docs/SECURITY-CHECK.md).
+
 - Only the package listed above is supported.
 - Deeply nested installation paths can stop Windows from launching the conversion tool.
 - More testing is welcome on different GPUs, Windows versions, physical controllers and longer sessions.
 - Setup preserves saves during reinstall, but the game's own save writes can still be interrupted by a crash.
 
-Found a problem? Please [open an issue](https://github.com/CaiusCodes/Techno-Kitten-Adventure-XBLA-PC-Recomp/issues) with your build version, Windows version, GPU, input device and the steps to reproduce it. Check `Game/logs/` for personal paths before sharing excerpts. Please don't attach game packages, converted assets or saves.
+Found a problem? Please [open an issue](https://github.com/CaiusCodes/Techno-Kitten-Adventure-XBLA-PC-Recomp/issues) with your build version, Windows version, GPU, input device and the steps to reproduce it. Check `resources/data/logs/` for personal paths before sharing excerpts. Please don't attach game packages, converted assets or saves.
 
 ## Screenshots
 ![Dream gameplay](docs/screenshots/dream.png)

@@ -15,3 +15,5 @@ The new port code is MIT-licensed under the root LICENSE. Retained third-party l
 MonoGame is modified locally during packaging: three XACT readers, two XNA SpriteBatch overloads and the SpriteBatch.Begin transform bridge are adapted by `tools/Tka.AssemblyTool/RuntimeAdapter.cs`. Its original hash is checked before edits. All patch code is included in source. NuGet lock files record managed dependencies. Shader compiler DLL placement is retained.
 
 Game assets and the original game assembly are supplied by the user and transformed only inside their local installation. They are not part of either release archive.
+
+The local single-launcher candidate distributes these same pinned components as conventional files under `resources/`, with their existing notices retained in `licenses/`. Windows' built-in shell component creates optional desktop shortcuts; it is not bundled and adds no external dependency. Original package-derived data stays under `resources/data/` and is excluded from the portable ZIP. Documentation screenshots retain their separate game-artwork notice.

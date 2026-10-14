@@ -13,7 +13,7 @@ Push-Location $projectRoot
 try {
     $release = Join-Path $projectRoot ('out/' + $Name)
     if (Test-Path -LiteralPath $release) { throw 'Choose a new release name; existing output is preserved.' }
-    $payloadRoot = Join-Path $release 'payload'
+    $payloadRoot = Join-Path $release 'Techno Kitten Adventure'
     $resources = Join-Path $payloadRoot 'resources'
     New-Item -ItemType Directory -Path $resources | Out-Null
     function Invoke-LocalDotnet {
@@ -48,17 +48,15 @@ try {
         $_.Name -in @('Helicopter.exe', 'Helicopter.dll', 'GameInfo.xml', 'GameInfo.bin', 'ScoreInfo')
     }
     if ($forbidden) { throw 'Asset-free payload check failed.' }
-    $manifest = Get-ChildItem -LiteralPath $payloadRoot -Recurse -File | ForEach-Object {
-        @{ path = [IO.Path]::GetRelativePath($payloadRoot, $_.FullName).Replace('\','/'); bytes = $_.Length; sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash }
+    # Runtime files remain ordinary files under resources; no embedded archive.
+    Invoke-LocalDotnet publish src/Tka.Installer -c Release -r win-x64 --self-contained true '-p:RestoreLockedMode=true' '-p:DebugType=None' '-p:DebugSymbols=false' '-p:PublishSingleFile=false' -o (Join-Path $resources 'setup')
+    Copy-Item -LiteralPath packaging/licenses -Destination $payloadRoot -Recurse
+    Copy-Item -LiteralPath packaging/README.txt -Destination $payloadRoot
+    Copy-Item -LiteralPath LICENSE -Destination (Join-Path $payloadRoot 'licenses/Port-Code.txt')
+    # Include the conventional setup runtime in the redistribution manifest.
+    $manifest = @(Get-Item -LiteralPath (Join-Path $payloadRoot 'Techno Kitten Adventure.exe')) + @(Get-ChildItem -LiteralPath $resources -Recurse -File | Where-Object Name -ne 'release-manifest.json') | ForEach-Object {
+        @{ path = [IO.Path]::GetRelativePath($payloadRoot,$_.FullName).Replace('\','/'); bytes = $_.Length; sha256 = (Get-FileHash -LiteralPath $_.FullName).Hash }
     }
-    @{ format = 2; version = $version; port_code_license = 'MIT'; built_utc = (Get-Date).ToUniversalTime().ToString('O'); assets_included = $false; files = @($manifest) } |
-        ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $payloadRoot 'release-manifest.json')
-    $payloadArchive = Join-Path $release 'installer-payload.zip'
-    [IO.Compression.ZipFile]::CreateFromDirectory($payloadRoot, $payloadArchive, [IO.Compression.CompressionLevel]::Optimal, $false)
-    Invoke-LocalDotnet publish src/Tka.Installer -c Release -r win-x64 --self-contained true '-p:RestoreLockedMode=true' '-p:DebugType=None' '-p:DebugSymbols=false' '-p:PublishSingleFile=true' '-p:EnableSingleFileAnalyzer=false' '-p:IncludeNativeLibrariesForSelfExtract=true' '-p:EnableCompressionInSingleFile=true' ('-p:TkaPayloadArchive=' + $payloadArchive) -o (Join-Path $release 'installer-build')
-    Copy-Item -LiteralPath (Join-Path $release 'installer-build/Setup Techno Kitten Adventure.exe') -Destination $release
-    Copy-Item -LiteralPath packaging/licenses -Destination $release -Recurse
-    Copy-Item -LiteralPath packaging/README.txt -Destination $release
-    Copy-Item -LiteralPath LICENSE -Destination (Join-Path $release 'licenses/Port-Code.txt')
-    Write-Output ('Asset-free single-file Setup ready: ' + $release)
+    @{ format = 3; version = $version; assets_included = $false; files = @($manifest) } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $resources 'release-manifest.json')
+    Write-Output ('Portable single-launcher build ready: ' + $payloadRoot)
 } finally { Pop-Location }

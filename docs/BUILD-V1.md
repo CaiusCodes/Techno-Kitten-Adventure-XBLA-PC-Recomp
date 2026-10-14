@@ -27,23 +27,13 @@ cmake --build .tools/XenosRecomp-build --config Release --target XenosRecomp
 ./tools/Package-Installer.ps1 -Release out/TKA-PC-Installer-v090
 ```
 
-Each output name must be fresh. The build embeds an asset-free, hash-verified runtime payload in a self-contained single-file Setup and adapts its private MonoGame copy automatically. The download ZIP contains one `Techno Kitten Adventure XBLA Recomp/` folder with only Setup, README.txt and licences. Setup creates `Game/` beside itself, containing the play EXE, `resources/`, release manifest and files converted from the user's package. Never run an ordinary publish over an installed Game directory: that would replace its patched MonoGame dependency. Keep translator `dxcompiler.dll` and `dxil.dll` adjacent to XenosRecomp within the embedded payload.
+Each output name must be fresh. The current local candidate uses the single-launcher layout in [PORTABLE-LAUNCHER.md](PORTABLE-LAUNCHER.md), with conventional self-contained runtime files under resources and no embedded executable archive. Keep translator DLLs adjacent to XenosRecomp. Version remains 0.9.0; the published previous layout has not been updated.
 
 ## Validation
 
-```powershell
-./tools/Test-PortableInstaller.ps1 -Zip 'out/Techno-Kitten-Adventure-XBLA-PC-Recomp-v0.9.0.zip' -Fixture v090-check -PackagePath 'PATH-TO-YOUR-PACKAGE'
-./tools/Test-DisplayAspect.ps1 -Game 'private/v090-check/Techno Kitten Adventure XBLA Recomp/Game'
-./tools/Test-Installer.ps1 -Release out/TKA-PC-Installer-v090 -FixturePath 'private/v090-check/Techno Kitten Adventure XBLA Recomp' -PackagePath 'PATH-TO-YOUR-PACKAGE'
-./tools/Test-InstallerDpi.ps1 -Installer 'out/TKA-PC-Installer-v090/Setup Techno Kitten Adventure.exe' -Output out/installer-dpi-check-v090
-```
+Use `tools/Test-SingleLauncher.ps1` for the current portable layout. It creates fresh isolated fixtures and uses your private supported package. [PORTABLE-LAUNCHER.md](PORTABLE-LAUNCHER.md) includes current build, packaging, integration and DPI commands. The older installer-layout test scripts are retained for the previous release, not the new root launcher.
 
-The first check creates a fresh isolated fixture and refuses existing directories. Fault tests require that fixture and must never target a personal installation. GPU probes open bounded game windows and save local results. Internal-render tests verify camera effects, true 2x rasterization and zero render-bridge allocations after warmup. Tests never upload anything.
-
-Keep installation fixtures at a short path. A fixture nested inside the fresh-source test directory exceeded Windows executable-path limits while launching XenosRecomp. The installer rejected that import without promoting the installation; moving the test to a shorter fixture path allowed conversion to proceed. This is a current installation-path limitation, not a missing source dependency.
-
-On 9 October 2026 the reviewed source archive was built in a fresh source directory, with fresh project outputs and a freshly compiled XenosRecomp target. The pinned SDK, NuGet cache, mgfxc installation and upstream source checkout were reused. This validates the source inventory and build instructions, not a clean-machine dependency bootstrap. Build only the required XenosRecomp target: building every upstream target also attempts unused zstd utilities, one of which failed resource compilation in this environment.
-
+Pinned dependencies were already installed locally. Fresh project builds and local import/gameplay/reinstall checks are recorded in the portable notes; a fully clean dependency bootstrap and physical hardware matrix remain separate tests.
 ## Source archive / GitHub
 
-`VERSION` is the release version. Build and packaging scripts check it against the .NET assembly metadata and packaged README; the release manifest and default ZIP name derive from it. Run `./tools/Package-Source.ps1` to create a fresh source archive using an explicit file allowlist. Its GitHub-ready root includes README, licences, artwork, source, lock files, build/test tools and selected documentation. It excludes private assets, local dependencies, generated outputs, old development notes and logs. The original social preview can be rerendered with `python tools/Render-SocialPreview.py` after installing Pillow; this is not required to build the game. Later, attach the installer ZIP to a release tagged `v0.9.0`. Do not upload the workspace parent or an installed Game folder.
+`VERSION` is the release version. Build and packaging scripts check it against the .NET assembly metadata and packaged README; the release manifest and default ZIP name derive from it. Run `./tools/Package-Source.ps1` to create a fresh source archive using an explicit file allowlist. Its GitHub-ready root includes README, licences, artwork, source, lock files, build/test tools and selected documentation. It excludes private assets, local dependencies, generated outputs, old development notes and logs. The original social preview can be rerendered with `python tools/Render-SocialPreview.py` after installing Pillow; this is not required to build the game. Later, attach the installer ZIP to a release tagged `v0.9.0`. Do not upload the workspace parent or imported resources/data. Publication of this candidate requires explicit approval; do not move the existing v0.9.0 tag.

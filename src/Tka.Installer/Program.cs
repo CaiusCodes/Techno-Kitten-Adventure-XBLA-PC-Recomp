@@ -22,13 +22,27 @@ internal static class Program
         }
         var root = AppContext.BaseDirectory;
         if (args.Length >= 2 && args[0] == "--root") { root = Path.GetFullPath(args[1]); args = args.Skip(2).ToArray(); }
-        Directory.CreateDirectory(Path.Combine(root, "logs"));
-        using var stream = new StreamWriter(Path.Combine(root, "logs", "installer-" + DateTime.Now.ToString("yyyyMMdd-HHmmss-fff") + ".log")) { AutoFlush = true };
+        var manualSetup = args.Contains("--setup",StringComparer.Ordinal);
+        args = args.Where(a => a != "--setup").ToArray();
+        var logs = Path.Combine(PortableLayout.Resources(root), "logs");
+        Directory.CreateDirectory(logs);
+        using var stream = new StreamWriter(Path.Combine(logs, "installer-" + DateTime.Now.ToString("yyyyMMdd-HHmmss-fff") + ".log")) { AutoFlush = true };
         var log = TextWriter.Synchronized(stream);
         Console.SetOut(log); Console.SetError(log);
         void Write(string text) { if (!string.IsNullOrWhiteSpace(text)) log.WriteLine($"{DateTime.UtcNow:O} {text}"); }
         try
         {
+            if (args.Length == 1 && args[0] == "--migrate") { PortableLayout.Migrate(root,Write); return PortableLayout.Ready(root) ? 0 : 2; }
+            if (args.Length == 1 && args[0] == "--test-ready") return PortableLayout.Ready(root) ? 0 : 2;
+            if (args.Length == 2 && args[0] == "--test-extras")
+            {
+                PlayExtras.ApplyFullscreen(root); PlayExtras.CreateShortcut(root,Path.GetFullPath(args[1])); return 0;
+            }
+            if (args.Length == 0 && !manualSetup)
+            {
+                PortableLayout.Migrate(root,Write);
+                if (PortableLayout.Ready(root)) { using var game = PortableLayout.StartGame(root); game.WaitForExit(); return game.ExitCode; }
+            }
             if (args.Length >= 2 && args[0] == "--install-here")
             {
                 new InstallEngine((value, message) => Write($"{value}% {message}"), Write)
@@ -58,12 +72,33 @@ internal static class Program
             Write("Setup window created.");
             if (args.Length == 1 && args[0] == "--test-package-picker")
             {
-                using var picker = InstallerForm.CreatePackagePicker();
-                if (!string.Equals(picker.InitialDirectory, Path.GetDirectoryName(Environment.ProcessPath), StringComparison.OrdinalIgnoreCase)
-                    || !picker.RestoreDirectory || !picker.CheckFileExists)
+                using var picker = InstallerForm.CreatePackagePicker(root);
+                if (!string.Equals(picker.InitialDirectory, root, StringComparison.OrdinalIgnoreCase)
+                    || !picker.RestoreDirectory || picker.ValidateNames ||
+                    InstallerForm.ResolvePickerPath(Path.Combine(root,"Use this folder")) != root)
                     throw new InvalidOperationException("Package picker directory/flags mismatch.");
                 Write("Package picker PASS: Setup EXE directory; working directory=" + Environment.CurrentDirectory);
                 return 0;
+            }
+            if (args.FirstOrDefault() is "--ui-auto-test" or "--ui-choice-test" or "--ui-drop-test" or "--ui-play-test")
+            {
+                Exception? failure = null;
+                form.Shown += async (_,_) =>
+                {
+                    try
+                    {
+                        if (!form.ExtrasUnchecked) throw new InvalidDataException("Extras must start unchecked.");
+                        if (args[0] == "--ui-drop-test") await form.TestDropAsync(args[1]); else await form.DiscoverAsync();
+                        if (args[0] == "--ui-choice-test") { if (form.ChoiceCount != 2 || form.IsReady) throw new InvalidDataException("Multiple-package choice failed."); }
+                        else if (!form.IsReady || form.BrowseEnabled || !form.PlayEnabled || (args[0] != "--ui-play-test" && Directory.Exists(Path.Combine(PortableLayout.Data(root),"logs"))))
+                            throw new InvalidDataException("Ready state, disabled Browse, or wait-for-Play failed.");
+                        if (args[0] == "--ui-play-test") form.TestPlay();
+                        Write("Setup flow PASS: " + args[0]);
+                    }
+                    catch (Exception error) { failure = error; }
+                    finally { form.Close(); }
+                };
+                Application.Run(form); if (failure is not null) throw failure; return 0;
             }
             if (args.Length == 1 && args[0] == "--ui-smoke")
             {
@@ -95,6 +130,7 @@ internal static class Program
                 form.Close();
                 return 0;
             }
+            form.Shown += async (_,_) => await form.DiscoverAsync();
             Application.Run(form);
             return 0;
         }

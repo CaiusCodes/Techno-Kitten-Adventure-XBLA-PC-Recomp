@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $version = [IO.File]::ReadAllText((Join-Path $projectRoot 'VERSION')).Trim()
 if (-not $Release) { throw 'Supply the fresh portable build directory.' }
-if (-not $Zip) { $Zip = 'out/Techno-Kitten-Adventure-portable-v' + $version + '.zip' }
+if (-not $Zip) { $Zip = 'out/Techno-Kitten-Adventure-XBLA-PC-Recomp-v' + $version + '.zip' }
 Push-Location $projectRoot
 try {
     $root = [IO.Path]::GetFullPath($Release)

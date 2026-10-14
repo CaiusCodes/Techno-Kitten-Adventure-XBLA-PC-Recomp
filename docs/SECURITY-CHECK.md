@@ -3,7 +3,7 @@
 **Microsoft Defender reported no threats** in the clean portable release folder and the player ZIP. This is evidence for this build and scanner state, not a guarantee that every antivirus will accept it.
 
 - Project version: `0.9.0`.
-- Player ZIP: `Techno-Kitten-Adventure-portable-v0.9.0.zip`.
+- Player ZIP: `Techno-Kitten-Adventure-XBLA-PC-Recomp-v0.9.0.zip`.
 - Published ZIP SHA-256: `5EEA493CD7F36F82FBA5692B619145EEEC7009E2C4878E541FE4A72798B2FC99`.
 - Defender engine: `1.1.26080.3`.
 - Defender security intelligence: `1.459.691.0`.

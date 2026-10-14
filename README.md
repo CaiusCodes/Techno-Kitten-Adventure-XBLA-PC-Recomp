@@ -31,7 +31,7 @@ Other revisions, repacked packages, loose extracted files and separate DLC packa
 
 ## Install and play
 
-Download **[Techno-Kitten-Adventure-portable-v0.9.0.zip](https://github.com/CaiusCodes/Techno-Kitten-Adventure-XBLA-PC-Recomp/releases/download/v0.9.0/Techno-Kitten-Adventure-portable-v0.9.0.zip)** from Releases. This is the current single-launcher download; files labelled legacy use the previous Setup/Game layout.
+Download **[Techno-Kitten-Adventure-XBLA-PC-Recomp-v0.9.0.zip](https://github.com/CaiusCodes/Techno-Kitten-Adventure-XBLA-PC-Recomp/releases/download/v0.9.0/Techno-Kitten-Adventure-XBLA-PC-Recomp-v0.9.0.zip)** from Releases.
 
 1. Extract the complete **Techno Kitten Adventure** folder to a short, writable location.
 2. Open **Techno Kitten Adventure.exe**. Put your package beside it or in **Game Package/** and setup will find it. One compatible package imports automatically; if several are found, choose one.
